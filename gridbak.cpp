@@ -237,6 +237,9 @@ public:
 	Plane * planes[10000]; //better be deep enough...
 	uint16_t heights[FIELD][FIELD];
 	uint8_t flux[FIELD][FIELD];
+#if MAX_THREADS > 1
+	pthread_mutex_t plane_mutex;
+#endif
 
 	//quick linear scan, quick because the list will always be tiny
 	static Threat * find(Threat * pos, Threat * end, uint16_t grain, uint8_t face){
@@ -354,17 +357,21 @@ public:
 		fclose(fd);
 	}
 
-	// keep two empty planes on the top
-	bool growgrid(){
-		if(planes[zmax-2]->taken){
-			try{
+	void growgrid(int z){
+		if(z >= zmax){
+#if MAX_THREADS > 1
+			pthread_mutex_lock(& plane_mutex);
+#endif
+
+			while(z >= zmax){
 				planes[zmax] = new Plane();
-			}catch(std::bad_alloc){
-				return false;
+				INCR(zmax);
 			}
-			zmax++;
+
+#if MAX_THREADS > 1
+			pthread_mutex_unlock(& plane_mutex);
+#endif
 		}
-		return true;
 	}
 
 	//dump full or inactive planes off the bottom, output layer based data
@@ -574,11 +581,13 @@ public:
 	}
 
 	void set_point(int x, int y, int z, Point & p){
+		growgrid(z);
 		fix_period(x, y);
 		planes[z]->set(x, y, p);
 	}
 
 	void set_threat(int x, int y, int z, int t){
+		growgrid(z);
 		fix_period(x, y);
 		planes[z]->set_threat(x, y, t);
 	}

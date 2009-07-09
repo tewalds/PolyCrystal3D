@@ -285,6 +285,7 @@ public:
 			//fill in the controller of the point if there is a new one
 			int thisgrowth;
 			int count = 0;
+			bool mem = true;
 			do{
 				count++;
 				thisgrowth = 0;
@@ -298,9 +299,10 @@ public:
 					for(int z = grid.zmin; z < grid.zmax; z++)
 						thisgrowth += run_layer(z, t, count);
 				}
+				mem = grid.growgrid();
 
 				growth += thisgrowth;
-			}while(thisgrowth);
+			}while(thisgrowth && mem);
 
 
 			echo("grew %d points in %d runs in %d msec ... ", growth, count, time_msec() - starttime);
@@ -315,6 +317,11 @@ public:
 
 			echo("drew image in %d msec\n", time_msec() - starttime);
 
+			if(!mem){
+				echo("Couldn't allocate more memory, current usage ~ %d MB\n", grid.memory_usage());
+				break;
+			}
+			
 			if(max_memory && grid.memory_usage() > max_memory){
 				echo("Hit the memory limit: %d Mb\n", max_memory);
 				break;

@@ -14,7 +14,7 @@ int time_msec(){
 enum ReqType {
 	RT_COUNT_THREATS,
 	RT_ADDFLUX,
-	RT_THREAT_POINTS,
+	RT_THREAT_POINTS
 };
 
 struct Request {

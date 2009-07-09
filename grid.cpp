@@ -1,6 +1,6 @@
 
 
-#define THREAT 0xFFFF
+#define THREAT (0xFFFF)
 
 int periodic_dist_sq(int x1, int y1, int x2, int y2){
 	int dx = abs(x1 - x2);
@@ -44,10 +44,86 @@ struct Point {
 		face = 0;
 		diffprob = 0;
 	}
+	
+	Point(uint16_t t, uint16_t g, uint8_t f, uint8_t d){
+		time = t;
+		grain = g;
+		face = f;
+		diffprob = d;
+	}
+};
+
+Point empty_point;
+Point full_point = Point(0xFFFE, 0xFFFE, 0xFE, 0);
+
+struct Sector {
+	uint16_t fullpoints;
+	Point * points;
+
+	Sector(){
+		fullpoints = 0;
+		points = NULL;
+	}
+
+	void alloc(){
+		if(!points){
+			Point * temp = new Point[FIELD];
+			CASv(points, NULL, temp);
+			if(points != temp) //already set by a different thread
+				delete[] temp;
+		}
+	}
+
+	void set(int i, Point & p){
+		alloc();
+		points[i] = p;
+		INCR(fullpoints);
+	}
+
+	void set_threat(int i, int t){
+		alloc();
+
+	 //only set it to be threatend if it's currently empty
+	 //reset the time of the threat, but only if it's a threat
+	 //valid without CAS since if a different thread sets a grain, it'll be the same timestamp
+		CASv(points[i].grain, 0, THREAT);
+		if(points[i].grain == THREAT)
+			points[i].time = t;
+	}
+
+	Point * get(int i){
+		if(points)
+			return &(points[i]);
+		if(fullpoints)
+			return & full_point;
+		return & empty_point;
+	}
+
+	bool full(){
+		return (fullpoints == FIELD);
+	}
+
+	void dump(FILE * fd){
+//		if(points){
+			if(fwrite(points, sizeof(Point), FIELD, fd));
+//		}else{
+//			for(int i = 0; i < FIELD; i++)
+//				if(fwrite(empty_point, sizeof(Point), 1, fd));				
+//		}
+	}
+
+	void drop(){
+		delete[] points;
+	}
+
+	void load(FILE * fd){
+		alloc();
+		if(fread(points, sizeof(Point), FIELD, fd));
+	}
 };
 
 struct Plane {
-	Point grid[FIELD][FIELD];
+	Sector grid[FIELD];
 	int taken;
 	int time;
 	
@@ -56,18 +132,51 @@ struct Plane {
 		taken = 0;
 	}
 
-	void dump(int level) const {
+	Point * get(int x, int y){
+		return grid[y].get(x);
+	}
+
+	void set(int x, int y, Point & p){
+		grid[y].set(x, p);
+
+		INCR(taken);
+		time = p.time;
+	}
+	
+	void set_threat(int x, int y, int t){
+		grid[y].set_threat(x, t);
+	}
+
+	void dump(int level){
 	//dump to a data file
+		char filename[50];
+		FILE * fd;
+
+		sprintf(filename, "grid.%05d", level);
+		fd = fopen(filename, "wb");
+
+		for(int i = 0; i < FIELD; i++)
+			grid[i].dump(fd);
+
+		fclose(fd);
+	}
+
+	bool load(int level){
 		char filename[50];
 		FILE* fd;
 
 		sprintf(filename, "grid.%05d", level);
-		fd = fopen(filename, "wb");
-		
-		for(int y = 0; y < FIELD; y++)
-			if(fwrite(grid[y], sizeof(Point), FIELD, fd));
+		fd = fopen(filename, "rb");
+
+		if(!fd)
+			return false;
+
+		for(int i = 0; i < FIELD; i++)
+			grid[i].load(fd);
 
 		fclose(fd);
+
+		return true;
 	}
 	
 	void stats(int level, int maxgraincount){
@@ -79,11 +188,14 @@ struct Plane {
 
 		vector<int> counts(maxgraincount, 0);
 	
-		for(int y = 0; y < FIELD; y++)
-			for(int x = 0; x < FIELD; x++)
-				if(grid[y][x].grain != THREAT)
-					counts[grid[y][x].grain]++;
-	
+		for(int y = 0; y < FIELD; y++){
+			for(int x = 0; x < FIELD; x++){
+				Point * p = get(x, y);
+				if(p->grain != THREAT)
+					counts[p->grain]++;
+			}
+		}
+
 		int num = 0;
 		for(int i = 1; i < maxgraincount; i++) //start at 1 since 0 is a special grain
 			if(counts[i])
@@ -94,14 +206,15 @@ struct Plane {
 		fclose(fd);
 	}
 	
-	void layermap(int level, vector<Grain> & grains) const {
+	void layermap(int level, vector<Grain> & grains){
 	//generate a png layermap
 		gdImagePtr im = gdImageCreateTrueColor(FIELD, FIELD);
 		gdImageFill(im, 0, 0, gdImageColorAllocate(im, 0, 0, 0));
 
 		for(int y = 0; y < FIELD; y++){
 			for(int x = 0; x < FIELD; x++){
-				int grain = grid[y][x].grain;
+				Point * p = get(x, y);
+				int grain = p->grain;
 				if(grain != 0 && grain != THREAT){
 					RGB rgb = RGB::HSV(grains[grain].color, 1.0, 1.0);
 					int color = gdImageColorAllocate(im, rgb.r, rgb.g, rgb.b);
@@ -117,24 +230,6 @@ struct Plane {
 		fclose(fd);
 		gdImageDestroy(im);
 	}
-
-	bool load(int level){
-		char filename[50];
-		FILE* fd;
-	
-		sprintf(filename, "grid.%05d", level);
-		fd = fopen(filename, "rb");
-
-		if(!fd)
-			return false;
-
-		for(int y = 0; y < FIELD; y++)
-			if(fread(grid[y], sizeof(Point), FIELD, fd));
-
-		fclose(fd);
-		
-		return true;
-	}
 };
 
 class Grid {
@@ -142,6 +237,9 @@ public:
 	Plane * planes[10000]; //better be deep enough...
 	uint16_t heights[FIELD][FIELD];
 	uint8_t flux[FIELD][FIELD];
+#if MAX_THREADS > 1
+	pthread_mutex_t plane_mutex;
+#endif
 
 	//quick linear scan, quick because the list will always be tiny
 	static Threat * find(Threat * pos, Threat * end, uint16_t grain, uint8_t face){
@@ -170,6 +268,99 @@ public:
 
 	int memory_usage(){
 		return ((zmax - zmin)*sizeof(Plane) + sizeof(heights) + sizeof(flux))/(1024*1024);
+	}
+
+	void growgrid(int z){
+		if(z >= zmax){
+#if MAX_THREADS > 1
+			pthread_mutex_lock(& plane_mutex);
+#endif
+
+			while(z >= zmax){
+				planes[zmax] = new Plane();
+				INCR(zmax);
+			}
+
+#if MAX_THREADS > 1
+			pthread_mutex_unlock(& plane_mutex);
+#endif
+		}
+	}
+
+	//dump full or inactive planes off the bottom, output layer based data
+	void cleangrid(int t, vector<Grain> & grains){
+		int newmin = zmin;
+		int minheight = heights[0][0];
+
+		for(int y = 0; y < FIELD; y++)
+			for(int x = 0; x < FIELD; x++)
+				if(minheight > heights[y][x])
+					minheight = heights[y][x];
+
+		for(int i = minheight; i >= zmin; i--){
+			if(planes[i]->taken == FIELD*FIELD || planes[i]->time + 25 < t){
+				newmin = i;
+				break;
+			}
+		}
+
+		for(int i = zmin; i < newmin; i++){
+			if(opts.layermap)
+				planes[i]->layermap(i, grains);
+			if(opts.stats)
+				planes[i]->stats(i, grains.size());
+			if(opts.datadump)
+				planes[i]->dump(i);
+			drop(i);
+		}
+		zmin = newmin;
+	}
+
+	void dump(vector<Grain> & grains){
+		for(int i = zmin; i < zmax; i++){
+			if(opts.layermap)
+				planes[i]->layermap(i, grains);
+			if(opts.stats)
+				planes[i]->stats(i, grains.size());
+			if(opts.datadump)
+				planes[i]->dump(i);
+			drop(i);
+		}
+	}
+
+	void load(int i){
+		planes[i] = new Plane();
+		planes[i]->load(i);
+	}
+
+	void drop(int i){
+		delete planes[i];
+		planes[i] = NULL;
+	}
+
+	void resetflux(){
+		for(int y = 0; y < FIELD; y++)
+			for(int x = 0; x < FIELD; x++)
+				flux[y][x] = 0;
+	}
+	
+	void incrflux(int x, int y){
+		fix_period(x, y);
+		INCR(flux[y][x]);		
+	}
+
+	void fluxmap(int t) const {
+	//dump to a data file
+		char filename[50];
+		FILE* fd;
+
+		sprintf(filename, "fluxmap.%05d", t);
+		fd = fopen(filename, "wb");
+		
+		for(int y = 0; y < FIELD; y++)
+			if(fwrite(flux[y], sizeof(uint8_t), FIELD, fd));
+
+		fclose(fd);
 	}
 
 	void output(int t, vector<Grain> & grains){
@@ -256,95 +447,6 @@ public:
 	
 		FILE * fd = fopen("timestats", "a");
 		fprintf(fd, "%d,%d,%f,%f\n", t, num, mean, rms);
-		fclose(fd);
-	}
-
-	// keep two empty planes on the top
-	bool growgrid(){
-		if(planes[zmax-2]->taken){
-			try{
-				planes[zmax] = new Plane();
-			}catch(std::bad_alloc){
-				return false;
-			}
-			zmax++;
-		}
-		return true;
-	}
-
-	//dump full or inactive planes off the bottom, output layer based data
-	void cleangrid(int t, vector<Grain> & grains){
-		int newmin = zmin;
-		int minheight = heights[0][0];
-
-		for(int y = 0; y < FIELD; y++)
-			for(int x = 0; x < FIELD; x++)
-				if(minheight > heights[y][x])
-					minheight = heights[y][x];
-
-		for(int i = minheight; i >= zmin; i--){
-			if(planes[i]->taken == FIELD*FIELD || planes[i]->time + 25 < t){
-				newmin = i;
-				break;
-			}
-		}
-
-		for(int i = zmin; i < newmin; i++){
-			if(opts.layermap)
-				planes[i]->layermap(i, grains);
-			if(opts.stats)
-				planes[i]->stats(i, grains.size());
-			if(opts.datadump)
-				planes[i]->dump(i);
-			drop(i);
-		}
-		zmin = newmin;
-	}
-
-	void dump(vector<Grain> & grains){
-		for(int i = zmin; i < zmax; i++){
-			if(opts.layermap)
-				planes[i]->layermap(i, grains);
-			if(opts.stats)
-				planes[i]->stats(i, grains.size());
-			if(opts.datadump)
-				planes[i]->dump(i);
-			drop(i);
-		}
-	}
-
-	void load(int i){
-		planes[i] = new Plane();
-		planes[i]->load(i);
-	}
-
-	void drop(int i){
-		delete planes[i];
-		planes[i] = NULL;
-	}
-
-	void resetflux(){
-		for(int y = 0; y < FIELD; y++)
-			for(int x = 0; x < FIELD; x++)
-				flux[y][x] = 0;
-	}
-	
-	void incrflux(int x, int y){
-		fix_period(x, y);
-		INCR(flux[y][x]);		
-	}
-
-	void fluxmap(int t) const {
-	//dump to a data file
-		char filename[50];
-		FILE* fd;
-
-		sprintf(filename, "fluxmap.%05d", t);
-		fd = fopen(filename, "wb");
-		
-		for(int y = 0; y < FIELD; y++)
-			if(fwrite(flux[y], sizeof(uint8_t), FIELD, fd));
-
 		fclose(fd);
 	}
 
@@ -461,12 +563,14 @@ public:
 			 // compiler should optimize % to & if FIELD is a power of 2
 		x = (x + 256*FIELD) % FIELD; //256 times to guarantee putting it in the positive integer space
 		y = (y + 256*FIELD) % FIELD;
-	
 	}
 
 	Point * get_point(int x, int y, int z) const {
+		if(z >= zmax)
+			return & empty_point;
+
 		fix_period(x, y);
-		return &(planes[z]->grid[y][x]);
+		return planes[z]->get(x, y);
 	}
 
 	uint16_t get_grain(int x, int y, int z) const {
@@ -479,19 +583,29 @@ public:
 		return 0;
 	}
 
+	void set_point(int x, int y, int z, Point & p){
+		growgrid(z);
+		fix_period(x, y);
+		planes[z]->set(x, y, p);
+	}
+
+	void set_threat(int x, int y, int z, int t){
+		growgrid(z);
+		fix_period(x, y);
+		planes[z]->set_threat(x, y, t);
+	}
+
 	void set_diffprob(int x, int y, int z, uint8_t prob){
-		get_point(x, y, z)->diffprob = prob;
+//		get_point(x, y, z)->diffprob = prob;
 	}
 
 	void set_point(int X, int Y, int Z, uint16_t time, uint16_t grain, uint8_t face){
-		Point * p = get_point(X, Y, Z);
+		Point p;
+		p.time = time;
+		p.grain = grain;
+		p.face = face;
 
-		p->time = time;
-		p->grain = grain;
-		p->face = face;
-
-		planes[Z]->taken++;
-		planes[Z]->time = time;
+		set_point(X, Y, Z, p);
 
 		int curval = heights[Y][X];
 		while(curval < Z){
@@ -501,25 +615,13 @@ public:
 
 		int Xmin = X - 1, Xmax = X + 1;
 		int Ymin = Y - 1, Ymax = Y + 1;
-		int Zmin = max(Z - 1, zmin), Zmax = min(Z + 1, zmax - 1);
+		int Zmin = max(Z - 1, zmin), Zmax = Z + 1;
 
-		for(int z = Zmin; z <= Zmax; z++){
-			for(int y = Ymin; y <= Ymax; y++){
-				for(int x = Xmin; x <= Xmax; x++){
-					if(x == X && y == Y && z == Z)
-						continue;
-
-					p = get_point(x, y, z);
-
-				 //only set it to be threatend if it's currently empty
-				 //reset the time of the threat, but only if it's a threat
-				 //valid without CAS since if a different thread sets a grain, it'll be the same timestamp
-					CASv(p->grain, 0, THREAT);
-					if(p->grain == THREAT)
-						p->time = time;
-				}
-			}
-		}
+		for(int z = Zmin; z <= Zmax; z++)
+			for(int y = Ymin; y <= Ymax; y++)
+				for(int x = Xmin; x <= Xmax; x++)
+					if(x != X || y != Y || z != Z)
+						set_threat(x, y, z, time);
 	}
 
 	//given a point, return a list of nearby grains. Fill the supplied array, returning the number of entries filled.

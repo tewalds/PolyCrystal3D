@@ -14,7 +14,7 @@ int time_msec(){
 enum ReqType {
 	RT_COUNT_THREATS,
 	RT_ADDFLUX,
-	RT_THREAT_POINTS,
+	RT_THREAT_POINTS
 };
 
 struct Request {
@@ -285,7 +285,6 @@ public:
 			//fill in the controller of the point if there is a new one
 			int thisgrowth;
 			int count = 0;
-			bool mem = true;
 			do{
 				count++;
 				thisgrowth = 0;
@@ -299,10 +298,9 @@ public:
 					for(int z = grid.zmin; z < grid.zmax; z++)
 						thisgrowth += run_layer(z, t, count);
 				}
-				mem = grid.growgrid();
 
 				growth += thisgrowth;
-			}while(thisgrowth && mem);
+			}while(thisgrowth);
 
 
 			echo("grew %d points in %d runs in %d msec ... ", growth, count, time_msec() - starttime);
@@ -317,11 +315,6 @@ public:
 
 			echo("drew image in %d msec\n", time_msec() - starttime);
 
-			if(!mem){
-				echo("Couldn't allocate more memory, current usage ~ %d MB\n", grid.memory_usage());
-				break;
-			}
-			
 			if(max_memory && grid.memory_usage() > max_memory){
 				echo("Hit the memory limit: %d Mb\n", max_memory);
 				break;
@@ -383,7 +376,7 @@ public:
 				if(threats == threats_end)
 					continue;
 
-			//figure out which grain and face got it first and set threats[0] to that one.
+			//figure out which grain and face got it first
 				uint16_t best = threats[0];
 				FaceDist min_dist = grains[best].find_distance(x, y, z);
 

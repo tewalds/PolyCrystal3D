@@ -155,8 +155,8 @@ struct Plane {
 		sprintf(filename, "grid.%05d", level);
 		fd = fopen(filename, "wb");
 
-		for(int i = 0; i < FIELD; i++)
-			grid[i].dump(fd);
+		for(int y = 0; y < FIELD; y++)
+			grid[y].dump(fd);
 
 		fclose(fd);
 	}
@@ -171,8 +171,8 @@ struct Plane {
 		if(!fd)
 			return false;
 
-		for(int i = 0; i < FIELD; i++)
-			grid[i].load(fd);
+		for(int y = 0; y < FIELD; y++)
+			grid[y].load(fd);
 
 		fclose(fd);
 

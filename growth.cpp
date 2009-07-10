@@ -287,11 +287,10 @@ public:
 			int count = 0;
 			bool mem = true;
 			do{
-				count++;
 				thisgrowth = 0;
 				if(num_threads > 1){
 					for(int z = grid.zmin; z < grid.zmax; z++)
-						request.push(new Request(RT_THREAT_POINTS, z, t));
+						request.push(new Request(RT_THREAT_POINTS, z, t, count));
 
 					for(int z = grid.zmin; z < grid.zmax; z++)
 						thisgrowth += (uint64_t)response.pop();
@@ -302,6 +301,7 @@ public:
 				mem = grid.growgrid();
 
 				growth += thisgrowth;
+				count++;
 			}while(thisgrowth && mem);
 
 

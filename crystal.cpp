@@ -21,7 +21,7 @@ using namespace std;
 #endif
 
 #ifndef MAX_THREADS
-#define MAX_THREADS 1 //slight speed improvement by setting to 1
+#define MAX_THREADS 100 //slight speed improvement by setting to 1
 #endif
 
 #if MAX_THREADS > 1

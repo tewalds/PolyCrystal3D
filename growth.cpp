@@ -363,11 +363,11 @@ public:
 			//point isn't threatened
 				Point * p = grid.get_point(x, y, z);
 
-				if(p->grain != THREAT || (onlynewthreats && p->time != t))
-					continue;
-
 				if(p->grain == FULLPOINT) //skip this whole sector if it's full
 					break;
+
+				if(p->grain != THREAT || (onlynewthreats && p->time != t))
+					continue;
 
 				uint16_t threats[27];
 				uint16_t * threats_end = grid.check_grain_threats(threats, x, y, z);

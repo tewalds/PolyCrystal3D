@@ -24,13 +24,13 @@ struct Threat {
 	uint8_t  face;
 };
 
-struct Peak {
+struct Coord {
 	int x, y, z;
 	
-	Peak(){
+	Coord(){
 		x = y = z = 0;
 	}
-	Peak(int X, int Y, int Z){
+	Coord(int X, int Y, int Z){
 		x = X;
 		y = Y;
 		z = Z;
@@ -372,7 +372,7 @@ public:
 	}
 
 	void peaks(int t, int maxgraincount){
-		vector<Peak> peaks(maxgraincount);
+		vector<Coord> peaks(maxgraincount);
 	
 		for(int y = 0; y < FIELD; y++){
 			for(int x = 0; x < FIELD; x++){
@@ -390,7 +390,7 @@ public:
 						}
 					}
 					if(peak)
-						peaks[grain] = Peak(x, y, z);
+						peaks[grain] = Coord(x, y, z);
 				}
 			}	
 		}

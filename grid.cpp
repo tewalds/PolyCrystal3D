@@ -1,6 +1,7 @@
 
 
 #define THREAT (0xFFFF)
+#define FULLPOINT (0xFFFE)
 
 int periodic_dist_sq(int x1, int y1, int x2, int y2){
 	int dx = abs(x1 - x2);
@@ -54,7 +55,7 @@ struct Point {
 };
 
 Point empty_point;
-Point full_point = Point(0xFFFE, 0xFFFE, 0xFE, 0);
+Point full_point = Point(FULLPOINT, FULLPOINT, 0xFE, 0);
 
 struct Sector {
 	uint16_t fullpoints;
@@ -63,6 +64,10 @@ struct Sector {
 	Sector(){
 		fullpoints = 0;
 		points = NULL;
+	}
+	
+	~Sector(){
+		drop();
 	}
 
 	void alloc(){
@@ -104,16 +109,22 @@ struct Sector {
 	}
 
 	void dump(FILE * fd){
-//		if(points){
+		if(points){ //write out the data
 			if(fwrite(points, sizeof(Point), FIELD, fd));
-//		}else{
-//			for(int i = 0; i < FIELD; i++)
-//				if(fwrite(empty_point, sizeof(Point), 1, fd));				
-//		}
+			drop();
+		}else if(full()){
+			fseek(fd, FIELD*sizeof(Point), SEEK_CUR); //already written, skip ahead the right distance
+		}else{ //write 0s
+			for(int i = 0; i < FIELD; i++)
+				if(fwrite(& empty_point, sizeof(Point), 1, fd));				
+		}
 	}
 
 	void drop(){
-		delete[] points;
+		if(points){
+			delete[] points;
+			points = NULL;
+		}
 	}
 
 	void load(FILE * fd){
@@ -126,10 +137,27 @@ struct Plane {
 	Sector grid[FIELD];
 	int taken;
 	int time;
-	
+	FILE * data_fd;
+
 	Plane(){
 		time = 0;
 		taken = 0;
+		data_fd = NULL;
+	}
+
+	~Plane(){
+		if(data_fd){
+			fclose(data_fd);
+			data_fd = NULL;
+		}
+	}
+
+	int memory_usage(){
+		int mem = sizeof(Plane);
+		for(int i = 0; i < FIELD; i++)
+			if(grid[i].points)
+				mem += sizeof(Point)*FIELD;
+		return mem;
 	}
 
 	Point * get(int x, int y){
@@ -147,23 +175,46 @@ struct Plane {
 		grid[y].set_threat(x, t);
 	}
 
-	void dump(int level){
+	void dump(int level, int sector = -1){
 	//dump to a data file
+
+		if(!data_fd){
+			char filename[50];
+			sprintf(filename, "grid.%05d", level);
+
+			//create the file if needed... stupid fopen not having a mode to open a file in write mode, 
+			//  creating it if needed, and not truncating it if it already exists
+			data_fd = fopen(filename, "ab");
+			fclose(data_fd);
+
+			//actually open the file now... rb+ since there's no write only without truncating and without appending mode
+			data_fd = fopen(filename, "rb+");
+		}
+
+		if(sector == -1){
+			for(int y = 0; y < FIELD; y++)
+				grid[y].dump(data_fd);
+		}else{
+			fseek(data_fd, sizeof(Point)*FIELD*sector, SEEK_SET);
+			grid[sector].dump(data_fd);
+		}
+	}
+
+	void delfile(int level){
+		if(data_fd){
+			fclose(data_fd);
+			data_fd = NULL;
+		}
+		
 		char filename[50];
-		FILE * fd;
-
 		sprintf(filename, "grid.%05d", level);
-		fd = fopen(filename, "wb");
 
-		for(int y = 0; y < FIELD; y++)
-			grid[y].dump(fd);
-
-		fclose(fd);
+		remove(filename);			
 	}
 
 	bool load(int level){
 		char filename[50];
-		FILE* fd;
+		FILE * fd;
 
 		sprintf(filename, "grid.%05d", level);
 		fd = fopen(filename, "rb");
@@ -264,7 +315,12 @@ public:
 	}
 
 	int memory_usage(){
-		return ((zmax - zmin)*sizeof(Plane) + sizeof(heights) + sizeof(flux))/(1024*1024);
+		int mem = sizeof(heights) + sizeof(flux);
+
+		for(int i = zmin; i < zmax; i++)
+			mem += planes[i]->memory_usage();
+
+		return mem;
 	}
 
 	void output(int t, vector<Grain> & grains){
@@ -369,6 +425,25 @@ public:
 
 	//dump full or inactive planes off the bottom, output layer based data
 	void cleangrid(int t, vector<Grain> & grains){
+
+	//drop each sector that is completely surrounded by full or dropped sectors
+		if(opts.savemem){
+			for(int z = zmin; z < zmax - 5; z++){
+				for(int y = 0; y < FIELD; y++){
+					if(planes[z]->grid[y].full() == 1){
+						bool full = true;
+						for(int Z = max(zmin, z - 1); Z <= z + 1; Z++)
+							for(int Y = y - 1; Y <= y + 1; Y++)
+								if(!planes[Z]->grid[(Y + FIELD) % FIELD].full())
+									full = false;
+						if(full)
+							planes[z]->dump(z, y);
+					}
+				}
+			}
+		}
+	
+	//find new zmin	
 		int newmin = zmin;
 		int minheight = heights[0][0];
 
@@ -384,28 +459,29 @@ public:
 			}
 		}
 
-		for(int i = zmin; i < newmin; i++){
-			if(opts.layermap)
-				planes[i]->layermap(i, grains);
-			if(opts.stats)
-				planes[i]->stats(i, grains.size());
-			if(opts.datadump)
-				planes[i]->dump(i);
-			drop(i);
-		}
-		zmin = newmin;
+		dump(grains, newmin);
 	}
 
-	void dump(vector<Grain> & grains){
-		for(int i = zmin; i < zmax; i++){
+	void dump(vector<Grain> & grains, int max = -1){
+		if(max == -1)
+			max = zmax;
+
+		for(int i = zmin; i < max; i++){
+			if(opts.savemem)
+				planes[i]->load(i);
 			if(opts.layermap)
 				planes[i]->layermap(i, grains);
 			if(opts.stats)
 				planes[i]->stats(i, grains.size());
 			if(opts.datadump)
 				planes[i]->dump(i);
+
+			if(opts.savemem && !opts.datadump)
+				planes[i]->delfile(i);
+
 			drop(i);
 		}
+		zmin = max;
 	}
 
 	void load(int i){

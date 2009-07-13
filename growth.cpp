@@ -213,7 +213,7 @@ public:
 		int starttime;
 
 		for(int t = 2; t <= num_steps && !opts.interrupt; t++){
-			echo("Step %d, layers %d-%d ... ", t, grid.zmin, grid.zmax);
+			echo("Step %d, layers %d-%d, %d Mb ... ", t, grid.zmin, grid.zmax, grid.memory_usage()/(1024*1024));
 			fflush(stdout);
 
 			starttime = time_msec();
@@ -318,11 +318,11 @@ public:
 			echo("drew image in %d msec\n", time_msec() - starttime);
 
 			if(!mem){
-				echo("Couldn't allocate more memory, current usage ~ %d MB\n", grid.memory_usage());
+				echo("Couldn't allocate more memory, current usage ~ %d Mb\n", grid.memory_usage()/(1024*1024));
 				break;
 			}
 			
-			if(max_memory && grid.memory_usage() > max_memory){
+			if(max_memory && grid.memory_usage()/(1024*1024) > max_memory){
 				echo("Hit the memory limit: %d Mb\n", max_memory);
 				break;
 			}
@@ -365,6 +365,9 @@ public:
 
 				if(p->grain != THREAT || (onlynewthreats && p->time != t))
 					continue;
+
+				if(p->grain == FULLPOINT) //skip this whole sector if it's full
+					break;
 
 				uint16_t threats[27];
 				uint16_t * threats_end = grid.check_grain_threats(threats, x, y, z);

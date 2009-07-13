@@ -47,6 +47,7 @@ struct Options {
 	bool voronei;   // voronei diagram of initial grain placements
 	bool graininit; // output the initial grain placements
 	bool datadump;  // full grid data dump, could be read after the fact to generate any stats needed
+	bool savemem;   // dump the data grid temporarily to save memory
 	bool interrupt; // set by the interrupt handler, meaning finish your current iteration then exit
 } opts;
 
@@ -99,6 +100,7 @@ int main(int argc, char **argv){
 	opts.voronei   = false;
 	opts.graininit = false;
 	opts.datadump  = false;
+	opts.savemem   = false;
 	opts.interrupt = false;
 
 	char * dir        = NULL;
@@ -115,7 +117,7 @@ int main(int argc, char **argv){
 	int    ray_step   = 10;
 	double ray_ratio  = 1.0;
 	double diffusion  = 0;
-	int    shape_id   = 14;
+	int    shape_id   = 6;
 
 	for(int i = 1; i < argc; i++){
 		char * ptr = argv[i];
@@ -144,6 +146,7 @@ int main(int argc, char **argv){
 				"\t   --voronei    Output a voronei map of initial grain placements         - off\n"
 				"\t   --graininit  Output initial grain placements and rotations            - off\n"
 				"\t   --datadump   Dump the layers in binary form (takes alot of space)     - off\n"
+				"\t   --savemem    Dump the data to disk temporarily to save memory         - off\n"
 				"\t   --dataformat Output a description of the binary format\n"
 				"\t-q --quiet      Disable all output, though they can be re-enabled individually\n"
 				"\t-v --verbose    Enable all output options\n");
@@ -218,8 +221,8 @@ int main(int argc, char **argv){
 			opts.voronei   = false;
 			opts.graininit = false;
 			opts.datadump  = false;
-		} else if(strcmp(ptr, "--cmdline") == 0) {
-			opts.cmdline = true;
+		} else if(strcmp(ptr, "--savemem") == 0) {
+			opts.savemem = true;
 		} else if(strcmp(ptr, "--console") == 0) {
 			opts.console = true;
 		} else if(strcmp(ptr, "--stats") == 0) {

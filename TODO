@@ -1,8 +1,5 @@
 TODO:
 
-- grow dynamically to save memory
-  - garbage collection for pockets, use a mark/sweep style method
-
 - colour based on angle
 
 - deal with overhangs

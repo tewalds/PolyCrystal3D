@@ -149,8 +149,12 @@ struct Sector {
 	}
 
 	void load(FILE * fd){
-		alloc();
-		if(fread(points, sizeof(Point), FIELD, fd));
+		if(points){
+			fseek(fd, FIELD*sizeof(Point), SEEK_CUR);
+		}else{
+			alloc();
+			if(fread(points, sizeof(Point), FIELD, fd));
+		}
 	}
 };
 
@@ -475,51 +479,71 @@ public:
 					if(planes[z]->marked(x, y))
 						sweep_pockets(x, y, z);
 	}
-	
+
 	//reset all reachable MARK threats to real THREATs
 	void unmark(int x, int y, int z){
-		if(z < zmin || z >= zmax)
-			return;
+		queue<Coord> q;
 
-		fix_period(x, y);
+		q.push(Coord(x, y, z));
 
-		if(planes[z]->unmark(x, y)){
-			surfacethreats++;
-		
-			unmark(x-1, y, z);
-			unmark(x+1, y, z);
-			unmark(x, y-1, z);
-			unmark(x, y+1, z);
-			unmark(x, y, z-1);
-			unmark(x, y, z+1);
+		Coord c;
+		while(!q.empty()){
+			c = q.front();
+			q.pop();
+
+			if(c.z < zmin || c.z >= zmax)
+				continue;
+
+			fix_period(c.x, c.y);
+
+			if(planes[c.z]->unmark(c.x, c.y)){
+				surfacethreats++;
+
+				q.push(Coord(c.x-1, c.y, c.z));
+				q.push(Coord(c.x+1, c.y, c.z));
+				q.push(Coord(c.x, c.y-1, c.z));
+				q.push(Coord(c.x, c.y+1, c.z));
+				q.push(Coord(c.x, c.y, c.z-1));
+				q.push(Coord(c.x, c.y, c.z+1));
+			}
 		}
 	}
 
 	void sweep_pockets(int x, int y, int z){
-		if(z < zmin || z >= zmax)
-			return;
+		queue<Coord> q;
 
-		fix_period(x, y);
+		q.push(Coord(x, y, z));
 
-		Point * p = planes[z]->get(x, y);
-		Point n;
-		if(p->grain == MARK){
-			n = *p;
-			n.grain = TPOCKET;
-		}else if(!p->grain){ //empty space
-			n.grain = POCKET;
-		}else{
-			return;
+		Coord c;
+		while(!q.empty()){
+			c = q.front();
+			q.pop();
+
+			if(c.z < zmin || c.z >= zmax)
+				continue;
+
+			fix_period(c.x, c.y);
+
+			Point * p = planes[c.z]->get(c.x, c.y);
+			Point n;
+			if(p->grain == MARK){
+				n = *p;
+				n.grain = TPOCKET;
+			}else if(!p->grain){ //empty space
+				n.grain = POCKET;
+			}else{
+				continue;
+			}
+		
+			planes[c.z]->set(c.x, c.y, n);
+		
+			q.push(Coord(c.x-1, c.y, c.z));
+			q.push(Coord(c.x+1, c.y, c.z));
+			q.push(Coord(c.x, c.y-1, c.z));
+			q.push(Coord(c.x, c.y+1, c.z));
+			q.push(Coord(c.x, c.y, c.z-1));
+			q.push(Coord(c.x, c.y, c.z+1));
 		}
-		
-		planes[z]->set(x, y, n);
-		
-		sweep_pockets(x-1, y, z);
-		sweep_pockets(x+1, y, z);
-		sweep_pockets(x, y-1, z);
-		sweep_pockets(x, y+1, z);
-		sweep_pockets(x, y, z-1);
-		sweep_pockets(x, y, z+1);
 	}
 
 	//dump full or inactive planes off the bottom, output layer based data
@@ -545,7 +569,7 @@ public:
 			}
 		}
 
-	//find new zmin	
+	//find new zmin
 		int newmin = zmin;
 		int minheight = heights[0][0];
 

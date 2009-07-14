@@ -29,19 +29,6 @@ struct Request {
 	}
 };
 
-struct Coord {
-	int x, y, z;
-	
-	Coord(){
-		x = y = z = 0;
-	}
-	Coord(int X, int Y, int Z){
-		x = X;
-		y = Y;
-		z = Z;
-	}
-};
-
 struct Ray {
 	double x, y, z;
 	double a, b, c;

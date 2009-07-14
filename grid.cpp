@@ -548,12 +548,18 @@ public:
 
 	//dump full or inactive planes off the bottom, output layer based data
 	void cleangrid(int t, vector<Grain> & grains){
+		int minheight = heights[0][0];
+		for(int y = 0; y < FIELD; y++)
+			for(int x = 0; x < FIELD; x++)
+				if(minheight > heights[y][x])
+					minheight = heights[y][x];
+
+	//mark all pockets as such
+		if(minheight > 0 && (opts.savemem || opts.datadump))
+			pocketsearch();
 
 	//drop each sector that is completely surrounded by full or dropped sectors
 		if(opts.savemem){
-			if(zmin > 0)
-				pocketsearch();
-
 			for(int z = zmin; z < zmax - 5; z++){
 				for(int y = 0; y < FIELD; y++){
 					if(planes[z]->grid[y].full()){
@@ -571,13 +577,6 @@ public:
 
 	//find new zmin
 		int newmin = zmin;
-		int minheight = heights[0][0];
-
-		for(int y = 0; y < FIELD; y++)
-			for(int x = 0; x < FIELD; x++)
-				if(minheight > heights[y][x])
-					minheight = heights[y][x];
-
 		for(int i = minheight; i >= zmin; i--){
 			if(planes[i]->taken == FIELD*FIELD || planes[i]->time + 25 < t){
 				newmin = i;
@@ -585,6 +584,7 @@ public:
 			}
 		}
 
+	//dump all planes under newmin
 		dump(grains, newmin);
 	}
 

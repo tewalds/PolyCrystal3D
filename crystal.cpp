@@ -49,6 +49,7 @@ struct Options {
 	bool graininit; // output the initial grain placements
 	bool datadump;  // full grid data dump, could be read after the fact to generate any stats needed
 	bool savemem;   // dump the data grid temporarily to save memory
+	bool pockets;   // mark and drop pockets, potentially save more memory and get better data dumps
 	bool interrupt; // set by the interrupt handler, meaning finish your current iteration then exit
 } opts;
 
@@ -102,6 +103,7 @@ int main(int argc, char **argv){
 	opts.graininit = false;
 	opts.datadump  = false;
 	opts.savemem   = false;
+	opts.pockets   = false;
 	opts.interrupt = false;
 
 	char * dir        = NULL;
@@ -148,6 +150,7 @@ int main(int argc, char **argv){
 				"\t   --graininit  Output initial grain placements and rotations            - off\n"
 				"\t   --datadump   Dump the layers in binary form (takes alot of space)     - off\n"
 				"\t   --savemem    Dump the data to disk temporarily to save memory         - off\n"
+				"\t   --pockets    Mark pockets in datadump, potentially saving memory too  - off\n"
 				"\t   --dataformat Output a description of the binary format\n"
 				"\t-q --quiet      Disable all output, though they can be re-enabled individually\n"
 				"\t-v --verbose    Enable all output options\n");
@@ -224,6 +227,8 @@ int main(int argc, char **argv){
 			opts.datadump  = false;
 		} else if(strcmp(ptr, "--savemem") == 0) {
 			opts.savemem = true;
+		} else if(strcmp(ptr, "--pockets") == 0) {
+			opts.pockets = true;
 		} else if(strcmp(ptr, "--console") == 0) {
 			opts.console = true;
 		} else if(strcmp(ptr, "--stats") == 0) {

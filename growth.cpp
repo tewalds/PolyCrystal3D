@@ -302,7 +302,7 @@ public:
 			grid.cleangrid(t, grains);
 			grid.output(t, grains);
 
-			echo("drew image in %d msec\n", time_msec() - starttime);
+			echo("output in %d msec\n", time_msec() - starttime);
 
 			if(!mem){
 				echo("Couldn't allocate more memory, current usage ~ %d Mb\n", grid.memory_usage()/(1024*1024));

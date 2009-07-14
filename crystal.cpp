@@ -12,6 +12,7 @@
 #include <cstdarg>
 #include "gd.h"
 #include <pthread.h>
+#include <queue>
 
 using namespace std;
 
@@ -320,6 +321,7 @@ int main(int argc, char **argv){
 		FILE *fd = fopen("cmdline", "w");
 		for(int i = 0; i < argc; i++)
 			fprintf(fd, "%s ", argv[i]);
+		fprintf(fd, "\n");
 		fclose(fd);
 	}
 

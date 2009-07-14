@@ -1,7 +1,11 @@
 
 
-#define THREAT (0xFFFF)
-#define FULLPOINT (0xFFFE)
+#define FULLPOINT (0xFFFF) //internal value to mean this point was dropped to disk
+#define THREAT    (0xFFFE) //this point is threatened by other points, but is empty
+#define POCKET    (0xFFFD) //this point is empty space, but can never be taken since it is in a pocket
+#define TPOCKET   (0xFFFC) //also in a pocket, but at the edge of the pocket and threatened
+#define MARK      (0xFFFB) //marks a threat for the mark/sweep pocket search
+#define MAXGRAIN  (0xFFF0) //max amount of grains, anything above is reserved for special values
 
 int periodic_dist_sq(int x1, int y1, int x2, int y2){
 	int dx = abs(x1 - x2);
@@ -20,13 +24,13 @@ struct Threat {
 	uint8_t  face;
 };
 
-struct Peak {
+struct Coord {
 	int x, y, z;
 	
-	Peak(){
+	Coord(){
 		x = y = z = 0;
 	}
-	Peak(int X, int Y, int Z){
+	Coord(int X, int Y, int Z){
 		x = X;
 		y = Y;
 		z = Z;
@@ -79,6 +83,23 @@ struct Sector {
 		}
 	}
 
+	void mark(int i){
+		if(points && points[i].grain == THREAT)
+			points[i].grain = MARK;
+	}
+
+	bool unmark(int i){
+		if(marked(i)){
+			points[i].grain = THREAT;
+			return true;
+		}
+		return false;
+	}
+	
+	bool marked(int i){
+		return (points && points[i].grain == MARK);
+	}
+
 	void set(int i, Point & p){
 		alloc();
 		points[i] = p;
@@ -128,8 +149,12 @@ struct Sector {
 	}
 
 	void load(FILE * fd){
-		alloc();
-		if(fread(points, sizeof(Point), FIELD, fd));
+		if(points){
+			fseek(fd, FIELD*sizeof(Point), SEEK_CUR);
+		}else{
+			alloc();
+			if(fread(points, sizeof(Point), FIELD, fd));
+		}
 	}
 };
 
@@ -173,6 +198,16 @@ struct Plane {
 	
 	void set_threat(int x, int y, int t){
 		grid[y].set_threat(x, t);
+	}
+
+	bool marked(int x, int y){
+		return grid[y].marked(x);
+	}	
+	void mark(int x, int y){
+		grid[y].mark(x);
+	}
+	bool unmark(int x, int y){
+		return grid[y].unmark(x);
 	}
 
 	void dump(int level, int sector = -1){
@@ -242,7 +277,7 @@ struct Plane {
 		for(int y = 0; y < FIELD; y++){
 			for(int x = 0; x < FIELD; x++){
 				Point * p = get(x, y);
-				if(p->grain != THREAT)
+				if(p->grain < MAXGRAIN)
 					counts[p->grain]++;
 			}
 		}
@@ -266,7 +301,7 @@ struct Plane {
 			for(int x = 0; x < FIELD; x++){
 				Point * p = get(x, y);
 				int grain = p->grain;
-				if(grain != 0 && grain != THREAT){
+				if(grain != 0 && grain < MAXGRAIN){
 					RGB rgb = RGB::HSV(grains[grain].color, 1.0, 1.0);
 					int color = gdImageColorAllocate(im, rgb.r, rgb.g, rgb.b);
 					gdImageSetPixel(im, x, y, color);
@@ -288,6 +323,8 @@ public:
 	Plane * planes[10000]; //better be deep enough...
 	uint16_t heights[FIELD][FIELD];
 	uint8_t flux[FIELD][FIELD];
+
+	int surfacethreats;
 
 	//quick linear scan, quick because the list will always be tiny
 	static Threat * find(Threat * pos, Threat * end, uint16_t grain, uint8_t face){
@@ -339,7 +376,7 @@ public:
 	}
 
 	void peaks(int t, int maxgraincount){
-		vector<Peak> peaks(maxgraincount);
+		vector<Coord> peaks(maxgraincount);
 	
 		for(int y = 0; y < FIELD; y++){
 			for(int x = 0; x < FIELD; x++){
@@ -352,12 +389,12 @@ public:
 							if(x1 == x && y1 == y)
 								continue;
 							int g = get_grain(x - x1, y - y1, z);
-							if(g != 0 && g != THREAT && g != grain)
+							if(g != 0 && g != grain && g < MAXGRAIN)
 								peak = false;
 						}
 					}
 					if(peak)
-						peaks[grain] = Peak(x, y, z);
+						peaks[grain] = Coord(x, y, z);
 				}
 			}	
 		}
@@ -384,7 +421,7 @@ public:
 		for(int y = 0; y < FIELD; y++){
 			for(int x = 0; x < FIELD; x++){
 				int grain = get_grain(x, y, heights[y][x]);
-				if(grain != 0 && grain != THREAT){
+				if(grain != 0 && grain < MAXGRAIN){
 					counts[grain]++;
 					totalheight += heights[y][x];
 				}
@@ -423,14 +460,103 @@ public:
 		return true;
 	}
 
+	void pocketsearch(){
+		//set all threats to MARK, ie threats that haven't been validated as executable threats
+		for(int z = zmin; z < zmax; z++)
+			for(int y = 0; y < FIELD; y++)
+				for(int x = 0; x < FIELD; x++)
+					planes[z]->mark(x, y);
+
+		surfacethreats = 0;
+
+		//reset all surface threats to actual THREATs
+		unmark(0, 0, heights[0][0]+1);
+		
+		//search for still MARKed threats, set them to TPOCKET, fill the internal space with POCKET
+		for(int z = zmin; z < zmax; z++)
+			for(int y = 0; y < FIELD; y++)
+				for(int x = 0; x < FIELD; x++)
+					if(planes[z]->marked(x, y))
+						sweep_pockets(x, y, z);
+	}
+
+	//reset all reachable MARK threats to real THREATs
+	void unmark(int x, int y, int z){
+		queue<Coord> q;
+
+		q.push(Coord(x, y, z));
+
+		Coord c;
+		while(!q.empty()){
+			c = q.front();
+			q.pop();
+
+			if(c.z < zmin || c.z >= zmax)
+				continue;
+
+			fix_period(c.x, c.y);
+
+			if(planes[c.z]->unmark(c.x, c.y)){
+				surfacethreats++;
+
+				q.push(Coord(c.x-1, c.y, c.z));
+				q.push(Coord(c.x+1, c.y, c.z));
+				q.push(Coord(c.x, c.y-1, c.z));
+				q.push(Coord(c.x, c.y+1, c.z));
+				q.push(Coord(c.x, c.y, c.z-1));
+				q.push(Coord(c.x, c.y, c.z+1));
+			}
+		}
+	}
+
+	void sweep_pockets(int x, int y, int z){
+		queue<Coord> q;
+
+		q.push(Coord(x, y, z));
+
+		Coord c;
+		while(!q.empty()){
+			c = q.front();
+			q.pop();
+
+			if(c.z < zmin || c.z >= zmax)
+				continue;
+
+			fix_period(c.x, c.y);
+
+			Point * p = planes[c.z]->get(c.x, c.y);
+			Point n;
+			if(p->grain == MARK){
+				n = *p;
+				n.grain = TPOCKET;
+			}else if(!p->grain){ //empty space
+				n.grain = POCKET;
+			}else{
+				continue;
+			}
+		
+			planes[c.z]->set(c.x, c.y, n);
+		
+			q.push(Coord(c.x-1, c.y, c.z));
+			q.push(Coord(c.x+1, c.y, c.z));
+			q.push(Coord(c.x, c.y-1, c.z));
+			q.push(Coord(c.x, c.y+1, c.z));
+			q.push(Coord(c.x, c.y, c.z-1));
+			q.push(Coord(c.x, c.y, c.z+1));
+		}
+	}
+
 	//dump full or inactive planes off the bottom, output layer based data
 	void cleangrid(int t, vector<Grain> & grains){
 
 	//drop each sector that is completely surrounded by full or dropped sectors
 		if(opts.savemem){
+			if(zmin > 0)
+				pocketsearch();
+
 			for(int z = zmin; z < zmax - 5; z++){
 				for(int y = 0; y < FIELD; y++){
-					if(planes[z]->grid[y].full() == 1){
+					if(planes[z]->grid[y].full()){
 						bool full = true;
 						for(int Z = max(zmin, z - 1); Z <= z + 1; Z++)
 							for(int Y = y - 1; Y <= y + 1; Y++)
@@ -442,8 +568,8 @@ public:
 				}
 			}
 		}
-	
-	//find new zmin	
+
+	//find new zmin
 		int newmin = zmin;
 		int minheight = heights[0][0];
 
@@ -704,7 +830,7 @@ public:
 
 					Point * p = get_point(x, y, z);
 
-					if(p->grain != 0 && p->grain != THREAT && find(threats, threatsend, p->grain) == threatsend){ //insert only if it isn't found yet
+					if(p->grain != 0 && p->grain < MAXGRAIN && find(threats, threatsend, p->grain) == threatsend){ //insert only if it isn't found yet
 						*threatsend = p->grain;
 						++threatsend;
 					}
@@ -730,7 +856,7 @@ public:
 
 					Point * p = get_point(x, y, z);
 
-					if(p->grain != 0 && p->grain != THREAT && find(threats, threatsend, p->grain, p->face) == threatsend){
+					if(p->grain != 0 && p->grain < MAXGRAIN && find(threats, threatsend, p->grain, p->face) == threatsend){
 						threatsend->grain = p->grain;
 						threatsend->face  = p->face;
 						++threatsend;

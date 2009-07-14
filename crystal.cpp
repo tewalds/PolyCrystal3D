@@ -148,9 +148,9 @@ int main(int argc, char **argv){
 				"\t   --peaks      Output a peaks list for each timestep to peaks.%%05d      - off\n"
 				"\t   --voronei    Output a voronei map of initial grain placements         - off\n"
 				"\t   --graininit  Output initial grain placements and rotations            - off\n"
-				"\t   --datadump   Dump the layers in binary form (takes alot of space)     - off\n"
-				"\t   --savemem    Dump the data to disk temporarily to save memory         - off\n"
-				"\t   --pockets    Mark pockets in datadump, potentially saving memory too  - off\n"
+				"\t   --datadump   Dump the layers in binary form (takes tons of space)     - off\n"
+				"\t   --pockets    Mark pockets in datadump, saving memory with --savemem   - off\n"
+				"\t   --savemem    Dump the data to disk (temporarily) to save memory       - off\n"
 				"\t   --dataformat Output a description of the binary format\n"
 				"\t-q --quiet      Disable all output, though they can be re-enabled individually\n"
 				"\t-v --verbose    Enable all output options\n");
@@ -212,6 +212,8 @@ int main(int argc, char **argv){
 			opts.voronei   = true;
 			opts.graininit = true;
 			opts.datadump  = true;
+			opts.savemem   = true;
+			opts.pockets   = true;
 		} else if(strcmp(ptr, "-q") == 0 || strcmp(ptr, "--quiet") == 0) {
 			opts.cmdline   = false;
 			opts.console   = false;
@@ -225,10 +227,8 @@ int main(int argc, char **argv){
 			opts.voronei   = false;
 			opts.graininit = false;
 			opts.datadump  = false;
-		} else if(strcmp(ptr, "--savemem") == 0) {
-			opts.savemem = true;
-		} else if(strcmp(ptr, "--pockets") == 0) {
-			opts.pockets = true;
+			opts.savemem   = false;
+			opts.pockets   = false;
 		} else if(strcmp(ptr, "--cmdline") == 0) {
 			opts.cmdline = true;
 		} else if(strcmp(ptr, "--console") == 0) {
@@ -253,6 +253,10 @@ int main(int argc, char **argv){
 			opts.graininit = true;
 		} else if(strcmp(ptr, "--datadump") == 0) {
 			opts.datadump = true;
+		} else if(strcmp(ptr, "--savemem") == 0) {
+			opts.savemem = true;
+		} else if(strcmp(ptr, "--pockets") == 0) {
+			opts.pockets = true;
 		} else if(strcmp(ptr, "--dataformat") == 0) {
 			Point point;
 			printf("The binary format is a one file per layer, in a large array Point structures\n");

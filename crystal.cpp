@@ -229,6 +229,8 @@ int main(int argc, char **argv){
 			opts.savemem = true;
 		} else if(strcmp(ptr, "--pockets") == 0) {
 			opts.pockets = true;
+		} else if(strcmp(ptr, "--cmdline") == 0) {
+			opts.cmdline = true;
 		} else if(strcmp(ptr, "--console") == 0) {
 			opts.console = true;
 		} else if(strcmp(ptr, "--stats") == 0) {

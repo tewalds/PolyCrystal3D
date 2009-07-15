@@ -382,7 +382,7 @@ public:
 			for(int x = 0; x < FIELD; x++){
 				int z = heights[y][x];
 				int grain = get_grain(x, y, z);
-				if(peaks[grain].z < z){
+				if(grain && grain < MAXGRAIN && peaks[grain].z < z){
 					bool peak = true;
 					for(int x1 = -1; x1 <= 1; x1++){
 						for(int y1 = -1; y1 <= 1; y1++){

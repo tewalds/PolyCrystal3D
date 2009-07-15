@@ -177,8 +177,8 @@ struct Plane {
 		}
 	}
 
-	int memory_usage(){
-		int mem = sizeof(Plane);
+	long memory_usage(){
+		long mem = sizeof(Plane);
 		for(int i = 0; i < FIELD; i++)
 			if(grid[i].points)
 				mem += sizeof(Point)*FIELD;
@@ -351,8 +351,8 @@ public:
 				heights[y][x] = 0;
 	}
 
-	int memory_usage(){
-		int mem = sizeof(heights) + sizeof(flux);
+	long memory_usage(){
+		long mem = sizeof(heights) + sizeof(flux);
 
 		for(int i = zmin; i < zmax; i++)
 			mem += planes[i]->memory_usage();

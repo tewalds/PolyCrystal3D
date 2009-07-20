@@ -33,15 +33,26 @@ struct Ray {
 	double x, y, z;
 	double a, b, c;
 
+	int round(double v){
+		return lroundl(v);
+//		return v;
+	}
+
 	bool incr(int zmin){
+		z += c;
+
+		if(round(z) < zmin){
+			z -= c;
+			return false;
+		}
+
 		x += a;
 		y += b;
-		z += c;
-		return (z > zmin + 0.5);
+		return true;
 	}
-	int X(){ return roundl(x); }
-	int Y(){ return roundl(y); }
-	int Z(){ return roundl(z); }
+	int X(){ return round(x); }
+	int Y(){ return round(y); }
+	int Z(){ return round(z); }
 };
 
 
@@ -70,7 +81,7 @@ public:
 	Growth(int threads){
 		max_memory = 0;
 		num_threads = threads;
-		
+
 		num_steps = 200;
 		growth_factor = 1;
 
@@ -405,8 +416,8 @@ public:
 
 		for(int i = 0; i < num; i++){
 			Ray ray;
-			ray.x = rand() % FIELD;
-			ray.y = rand() % FIELD;
+			ray.x = unitrand() * FIELD;
+			ray.y = unitrand() * FIELD;
 			ray.z = grid.zmax-1;
 
 			do{

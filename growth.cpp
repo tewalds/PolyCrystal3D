@@ -34,8 +34,8 @@ struct Ray {
 	double a, b, c;
 
 	int round(double v){
-		return lroundl(v);
-//		return v;
+//		return lroundl(v);
+		return v;
 	}
 
 	bool incr(int zmin){
@@ -300,7 +300,7 @@ public:
 
 				growth += thisgrowth;
 				count++;
-			}while(thisgrowth && mem);
+			}while(mem && count < 5 && thisgrowth && thisgrowth > growth/1000.0);
 
 
 			echo("grew %d points in %d runs in %d msec ... ", growth, count, time_msec() - starttime);

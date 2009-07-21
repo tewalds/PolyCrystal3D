@@ -7,7 +7,7 @@ const double gr2 = gr*gr;
 struct Shape{
 	const char * name;
 	int    num_faces;
-	double faces[50 * 5]; //must be big enough to hold the shape with the most faces, A, B, C, D -> (0,1], P -> [0,1]
+	double faces[255 * 5]; //must be big enough to hold the shape with the most faces, A, B, C, D -> (0,1], P -> [0,1]
 };
 
 Shape Tetrahedron = {

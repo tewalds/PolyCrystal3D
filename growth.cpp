@@ -62,6 +62,7 @@ public:
 	int num_steps;
 	double growth_factor;
 	int max_memory;
+	int end_grains;
 
 	int ray_step;
 	double ray_ratio;
@@ -84,6 +85,7 @@ public:
 
 		num_steps = 200;
 		growth_factor = 1;
+		end_grains = 20;
 
 		start_angle = 0;
 		ray_step = 10;
@@ -317,6 +319,12 @@ public:
 
 			if(!mem){
 				echo("Couldn't allocate more memory, current usage ~ %d Mb\n", grid.memory_usage()/(1024*1024));
+				break;
+			}
+
+			count = grid.graincount(grains.size());
+			if(count <= end_grains){
+				echo("Hit the grain limit: %d grains left\n", count);
 				break;
 			}
 			

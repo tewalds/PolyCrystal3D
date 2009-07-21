@@ -115,6 +115,7 @@ int main(int argc, char **argv){
 	double growth_factor = 1.0;
 	double start_angle = 0.0;
 	int    num_grains = 10000;
+	int    end_grains = 20;
 	double min_dist   = 0.0;
 	double ray_angle  = 0;
 	int    ray_step   = 10;
@@ -158,6 +159,7 @@ int main(int argc, char **argv){
 				"\t-l --load       Load location and rotation data from graininit, still needs shapes and grain count\n"
  				"\t-n --steps      Number of time steps to run [%d]\n"
 				"\t-g --grains     Number of Grains to simulate [%d]\n"
+				"\t-e --endgrains  Stop the simulation when this many are left [%d]\n"
 				"\t-S --startangle Angle constant to center the grain rotation distribution around [%.2f]\n"
 				"\t   --sep        Minimum grain separation [auto]\n"
 				"\t-f --factor     Growth Factor (0,1], can slow down the sim for greater accuracy [%.2f]\n"
@@ -165,9 +167,9 @@ int main(int argc, char **argv){
 				"\t-R --rayratio   Number of rays to generate per occupied point [%.2f]\n"
 				"\t-a --angleconst Angle constant to center the ray distribution around (evap: 50+, sputter: 1-2, lpcvd: 0) [%.2f]\n"
 				"\t-D --diffusion  Probability of each diffusion step [0,1), only useful with raytracing [%.2f]\n"
-				"\t-s --shape      Shape (4,5,6,7,8,9,12,13,14,20) [%d]\n"
+				"\t-s --shape      Shape (4,5,6,7,8,9,12,13,14,20,252) [%d]\n"
 				"\t   --shapes     List the available shapes\n",
-				num_steps, num_grains, start_angle, growth_factor, ray_step, ray_ratio, ray_angle, diffusion, shape_id);
+				num_steps, num_grains, end_grains, start_angle, growth_factor, ray_step, ray_ratio, ray_angle, diffusion, shape_id);
 			exit(255);
 		} else if(strcmp(ptr, "--shapes") == 0){
 			printf("List of chooseable shapes\n"
@@ -181,6 +183,7 @@ int main(int argc, char **argv){
 				"\t13 - Rhombic Dodecahedron\n"
 				"\t14 - Cuboctahedron\n"
 				"\t20 - Icosahedron\n"
+				"\t252 - 252 sided near-sphere\n"
 			);
 			exit(255);
 		} else if(strcmp(ptr, "-d") == 0 || strcmp(ptr, "--dir") == 0) {
@@ -283,6 +286,11 @@ int main(int argc, char **argv){
 			if(ptr == NULL) { printf("Please specify Number of grains\n"); exit(1); }
 			num_grains = atoi(ptr);
 			if(num_grains < 1 || num_grains > 65000){ printf("Num Grains out of range"); exit(2); }
+		} else if(strcmp(ptr, "-e") == 0 || strcmp(ptr, "--endgrains") == 0) {
+			ptr = argv[++i];
+			if(ptr == NULL) { printf("Please specify Number of end grains\n"); exit(1); }
+			end_grains = atoi(ptr);
+			if(end_grains < 1 || num_grains > 65000){ printf("Num end Grains out of range"); exit(2); }
 		} else if(strcmp(ptr, "-S") == 0 || strcmp(ptr, "--startangle") == 0) {
 			ptr = argv[++i];
 			if(ptr == NULL) { printf("Please specify Start Angle constant\n"); exit(1); }
@@ -352,6 +360,7 @@ int main(int argc, char **argv){
 		case 13: shape = Rhombic_dodecahedron; break;
 		case 14: shape = Cuboctahedron;        break;
 		case 20: shape = Icosahedron;          break;
+		case 252:shape = Sphere252;            break;
 		default: printf("Unknown shape\n"); exit(1);
 	}
 
@@ -360,6 +369,7 @@ int main(int argc, char **argv){
 	Growth growth(threads);
 
 	growth.num_steps = num_steps;
+	growth.end_grains = end_grains;
 	growth.growth_factor = growth_factor;
 	
 	growth.max_memory = max_memory;

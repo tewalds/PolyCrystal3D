@@ -409,24 +409,38 @@ public:
 		fclose(fd);
 	}
 
+	int graincount(int maxgraincount){
+		vector<int> counts(maxgraincount, 0);
+
+		for(int y = 0; y < FIELD; y++){
+			for(int x = 0; x < FIELD; x++){
+				int grain = get_grain(x, y, heights[y][x]);
+				if(grain != 0 && grain < MAXGRAIN)
+					counts[grain]++;
+			}
+		}
+
+		int num = 0;
+		for(int i = 1; i < maxgraincount; i++) //start at 1 since 0 is a special grain
+			if(counts[i])
+				num++;
+
+		return num;
+	}
+
 	void stats(int t, int maxgraincount){
 /*
 - number of surface grains (count of grains in height map)
 - mean height (average max z)
 - rms roughness = sqrt(sum((h - avgH)^2)/FIELD^2)
 */
-		vector<int> counts(maxgraincount, 0);
-		uint64_t totalheight = 0;
 
-		for(int y = 0; y < FIELD; y++){
-			for(int x = 0; x < FIELD; x++){
-				int grain = get_grain(x, y, heights[y][x]);
-				if(grain != 0 && grain < MAXGRAIN){
-					counts[grain]++;
-					totalheight += heights[y][x];
-				}
-			}
-		}
+		int num = graincount(maxgraincount);
+
+		uint64_t totalheight = 0;
+		for(int y = 0; y < FIELD; y++)
+			for(int x = 0; x < FIELD; x++)
+				totalheight += heights[y][x];
 
 		double mean = (double)totalheight/(FIELD*FIELD);
 		
@@ -436,11 +450,6 @@ public:
 				totalms += (heights[y][x] - mean)*(heights[y][x] - mean);
 		
 		double rms = sqrt(totalms/(FIELD*FIELD));
-
-		int num = 0;
-		for(int i = 1; i < maxgraincount; i++) //start at 1 since 0 is a special grain
-			if(counts[i])
-				num++;
 	
 		FILE * fd = fopen("timestats", "a");
 		fprintf(fd, "%d,%d,%f,%f\n", t, num, mean, rms);

@@ -61,6 +61,7 @@ int main(int argc, char **argv){
 		exit(1);
 	}
 
+	int count = 0;
 	for(int y = start; y <= end; y++){
 		char filename[50];
 		FILE *fd;
@@ -91,11 +92,14 @@ int main(int argc, char **argv){
 		gdImagePng(im, fd);
 		fclose(fd);
 		gdImageDestroy(im);
+
 		printf(".");
+		if(++count % 50 == 0)
+			printf("\n");
 		fflush(stdout);
 	}
 	printf("\n");
-		
+
 	return 0;
 }
 

@@ -162,8 +162,8 @@ public:
 			if(load){
 				g.load(fd, shape.faces, shape.num_faces);
 			}else{
-				double dist = FIELD;
-	
+				double dist = FIELD*FIELD;
+
 				do{
 					g.x = rand() % FIELD;
 					g.y = rand() % FIELD;

@@ -291,17 +291,17 @@ int main(int argc, char **argv){
 			ptr = argv[++i];
 			if(ptr == NULL) { printf("Please specify Number of grains\n"); exit(1); }
 			num_grains = atoi(ptr);
-			if(num_grains < 1 || num_grains > 65000){ printf("Num Grains out of range"); exit(2); }
+			if(num_grains < 1 || num_grains > 65000){ printf("Num Grains out of range\n"); exit(2); }
 		} else if(strcmp(ptr, "-e") == 0 || strcmp(ptr, "--endgrains") == 0) {
 			ptr = argv[++i];
 			if(ptr == NULL) { printf("Please specify Number of end grains\n"); exit(1); }
 			end_grains = atoi(ptr);
-			if(end_grains < 1 || num_grains > 65000){ printf("Num end Grains out of range"); exit(2); }
+			if(end_grains < 0 || num_grains > 65000){ printf("Num end Grains out of range\n"); exit(2); }
 		} else if(strcmp(ptr, "-S") == 0 || strcmp(ptr, "--startangle") == 0) {
 			ptr = argv[++i];
 			if(ptr == NULL) { printf("Please specify Start Angle constant\n"); exit(1); }
 			start_angle = atof(ptr);
-			if(start_angle < 0){ printf("Start angle constant out of range"); exit(2); }
+			if(start_angle < 0){ printf("Start angle constant out of range\n"); exit(2); }
 		} else if(strcmp(ptr, "--sep") == 0) {
 			ptr = argv[++i];
 			if(ptr == NULL) { printf("Please specify Minimum grain separation\n"); exit(1); }

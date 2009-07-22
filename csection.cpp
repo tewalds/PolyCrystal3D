@@ -91,7 +91,9 @@ int main(int argc, char **argv){
 		gdImagePng(im, fd);
 		fclose(fd);
 		gdImageDestroy(im);
+		printf(".");
 	}
+	printf("\n");
 		
 	return 0;
 }

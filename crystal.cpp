@@ -264,10 +264,16 @@ int main(int argc, char **argv){
 			Point point;
 			printf("The binary format is a one file per layer, in a large array Point structures\n");
 			printf("Each array entry is %d bytes with elements:\n", (int)sizeof(point));
-			printf("\tTime  - uint16_t - %d bytes\n", (int)sizeof(point.time));
-			printf("\tGrain - uint16_t - %d bytes\n", (int)sizeof(point.grain));
-			printf("\tFace  - uint8_t  - %d bytes\n", (int)sizeof(point.face));
+			printf("\tTime     - uint16_t - %d bytes - timestep this point was taken\n", (int)sizeof(point.time));
+			printf("\tGrain    - uint16_t - %d bytes - grain this point was taken by\n", (int)sizeof(point.grain));
+			printf("\tFace     - uint8_t  - %d bytes - face on the grain that took it\n", (int)sizeof(point.face));
+			printf("\tDiffprob - uint8_t  - %d bytes - diffusion probability at this point when it was a threat\n", (int)sizeof(point.diffprob));
 			printf("Anything left is empty space for alignment\n");
+			printf("Grain has a couple non-grain special values\n");
+			printf("\t0x%X - Threat\n", THREAT);
+			printf("\t0x%X - Pocket\n", POCKET);
+			printf("\t0x%X - Threatened Pocket\n", TPOCKET);
+			printf("\t0x%X - Max grain\n", MAXGRAIN);
 			exit(255);
 		} else if(strcmp(ptr, "-n") == 0 || strcmp(ptr, "--steps") == 0) {
 			ptr = argv[++i];

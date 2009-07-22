@@ -92,6 +92,7 @@ int main(int argc, char **argv){
 		fclose(fd);
 		gdImageDestroy(im);
 		printf(".");
+		fflush(stdout);
 	}
 	printf("\n");
 		

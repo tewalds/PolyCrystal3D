@@ -211,9 +211,10 @@ public:
 	void run(){
 		int start = time_msec();
 		int starttime;
+		int remain = grains.size() - 1;
 
 		for(int t = 2; t <= num_steps && !opts.interrupt; t++){
-			echo("Step %d, layers %d-%d, %d Mb ... ", t, grid.zmin, grid.zmax, grid.memory_usage()/(1024*1024));
+			echo("Step %d, layers %d-%d, %d grains, %d Mb ... ", t, grid.zmin, grid.zmax, remain, grid.memory_usage()/(1024*1024));
 			fflush(stdout);
 
 			starttime = time_msec();
@@ -322,9 +323,9 @@ public:
 				break;
 			}
 
-			count = grid.graincount(grains.size());
-			if(count <= end_grains){
-				echo("Hit the grain limit: %d grains left\n", count);
+			remain = grid.graincount(grains.size());
+			if(remain <= end_grains){
+				echo("Hit the grain limit: %d grains left\n", remain);
 				break;
 			}
 			

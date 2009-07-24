@@ -48,7 +48,7 @@ struct Face {
 	double fluxamnt(){
 		double amnt = 0;
 		if(flux && threats)
-			amnt = (abs(A) + abs(B) + abs(C)) * flux / threats;
+			amnt = (fabs(A) + fabs(B) + fabs(C)) * flux / threats;
 
 		return amnt;
 	}

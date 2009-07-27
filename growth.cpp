@@ -317,6 +317,8 @@ public:
 			//output and finished data and images
 			grid.cleangrid(t, grains);
 			grid.output(t, grains);
+			if(opts.growth)
+				growthstats(t);
 
 			echo("output in %d msec\n", time_msec() - starttime);
 
@@ -339,6 +341,23 @@ public:
 
 		grid.dump(grains);
 		echo("Finished in %d sec\n", (time_msec() - start)/1000);
+	}
+
+	void growthstats(int t){
+		char filename[50];
+		sprintf(filename, "growth.%05d", t);
+		FILE * fd = fopen(filename, "w");
+
+		fprintf(fd, "grain,face,A,B,C,D,F,dF,flux,threats\n");
+
+		for(unsigned int i = 0; i < grains.size(); i++){
+			for(unsigned int j = 0; j < grains[i].faces.size(); j++){
+				fprintf(fd, "%d,%d,", i, j);
+				grains[i].faces[j].dump(fd);
+			}
+		}
+
+		fclose(fd);
 	}
 
 	void count_threats(int z){

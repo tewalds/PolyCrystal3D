@@ -47,6 +47,7 @@ struct Options {
 	bool layermap;  // map of grains of a layer, may be useful for stats?
 	bool voronei;   // voronei diagram of initial grain placements
 	bool graininit; // output the initial grain placements
+	bool growth;    // dump of growth of each grain/face
 	bool datadump;  // full grid data dump, could be read after the fact to generate any stats needed
 	bool savemem;   // dump the data grid temporarily to save memory
 	bool pockets;   // mark and drop pockets, potentially save more memory and get better data dumps
@@ -150,6 +151,7 @@ int main(int argc, char **argv){
 				"\t   --peaks      Output a peaks list for each timestep to peaks.%%05d      - off\n"
 				"\t   --voronei    Output a voronei map of initial grain placements         - off\n"
 				"\t   --graininit  Output initial grain placements and rotations            - off\n"
+				"\t   --growth     Output a growth list for each timestep to growth.%%05d   - off\n"
 				"\t   --datadump   Dump the layers in binary form (takes tons of space)     - off\n"
 				"\t   --pockets    Mark pockets in datadump, saving memory with --savemem   - off\n"
 				"\t   --savemem    Dump the data to disk (temporarily) to save memory       - off\n"
@@ -216,6 +218,7 @@ int main(int argc, char **argv){
 			opts.layermap  = true;
 			opts.voronei   = true;
 			opts.graininit = true;
+			opts.growth    = true;
 			opts.datadump  = true;
 			opts.savemem   = true;
 			opts.pockets   = true;
@@ -231,6 +234,7 @@ int main(int argc, char **argv){
 			opts.layermap  = false;
 			opts.voronei   = false;
 			opts.graininit = false;
+			opts.growth    = false;
 			opts.datadump  = false;
 			opts.savemem   = false;
 			opts.pockets   = false;
@@ -256,6 +260,8 @@ int main(int argc, char **argv){
 			opts.voronei = true;
 		} else if(strcmp(ptr, "--graininit") == 0) {
 			opts.graininit = true;
+		} else if(strcmp(ptr, "--growth") == 0) {
+			opts.growth = true;
 		} else if(strcmp(ptr, "--datadump") == 0) {
 			opts.datadump = true;
 		} else if(strcmp(ptr, "--savemem") == 0) {

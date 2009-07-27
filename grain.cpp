@@ -39,10 +39,15 @@ struct Face {
 		P = p;
 		
 		flux = 0;
+		threats = 0;
 	}
 
 	void output() const {
 		printf("\t%.3f*x + %.3f*y + %.3f*z + %.3f*f = 0, f = %.3f, K = %.3f\n", A, B, C, D, F, K);
+	}
+
+	void dump(FILE * fd) const {
+		fprintf(fd, "%f,%f,%f,%f,%f,%f,%d,%d\n", A, B, C, D, F, dF, flux, threats);
 	}
 
 	double fluxamnt(){

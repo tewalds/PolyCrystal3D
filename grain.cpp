@@ -180,6 +180,8 @@ public:
 	}
 
 	//return the face that is abs closest, but the relative growth distance of the face that took it
+	//between grains, use the relative distance, giving it to the grain that swallowed it first
+	//between faces, use the absolute distance, since there may be faces that swallowed it several timesteps ago
 	FaceDist find_distance(int X, int Y, int Z) const {
 		fix_period(X, Y);
 
@@ -191,20 +193,19 @@ public:
 		double dist;
 		for(unsigned int i = 0; i < faces.size(); i++){
 			dist = faces[i].rel_dist(X, Y, Z);
-			if(dist >= 0 && dist < reldist){
+			if(dist < reldist){
 				reldist = dist;
 				relface = i;
 			}
 
 			dist = faces[i].abs_dist(X, Y, Z);
-			if(dist >= 0 && dist < absdist){
+			if(dist < absdist){
 				absdist = dist;
 				absface = i;
 			}
 		}
 
 		return FaceDist(absface, reldist);
-//		return FaceDist(relface, reldist);
 	}
 
 	//check if a point in space is within this grain	

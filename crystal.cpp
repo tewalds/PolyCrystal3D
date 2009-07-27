@@ -121,6 +121,7 @@ int main(int argc, char **argv){
 	int    ray_step   = 10;
 	double ray_ratio  = 1.0;
 	double diffusion  = 0;
+	bool   substrate_diffusion = true;
 	int    shape_id   = 6;
 
 	for(int i = 1; i < argc; i++){
@@ -167,6 +168,7 @@ int main(int argc, char **argv){
 				"\t-R --rayratio   Number of rays to generate per occupied point [%.2f]\n"
 				"\t-a --angleconst Angle constant to center the ray distribution around (evap: 50+, sputter: 1-2, lpcvd: 0) [%.2f]\n"
 				"\t-D --diffusion  Probability of each diffusion step [0,1), only useful with raytracing [%.2f]\n"
+				"\t   --no-subdiff Turn off substrate diffusion, shoot extra rays until they hit a grain\n"
 				"\t-s --shape      Shape (4,5,6,7,8,9,12,13,14,20,252) [%d]\n"
 				"\t   --shapes     List the available shapes\n",
 				num_steps, num_grains, end_grains, start_angle, growth_factor, ray_step, ray_ratio, ray_angle, diffusion, shape_id);
@@ -331,6 +333,8 @@ int main(int argc, char **argv){
 			ptr = argv[++i];
 			if(ptr == NULL) { printf("Please specify Shape\n"); exit(1);	}
 			shape_id = atoi(ptr);
+		} else if(strcmp(ptr, "--no-subdiff") == 0){
+			substrate_diffusion = false;
 		} else {
 			printf("Unknown argument %s\n", ptr);
 			exit(1);
@@ -386,6 +390,7 @@ int main(int argc, char **argv){
 	growth.ray_ratio = ray_ratio;
 	
 	growth.diffusion_probability = diffusion;
+	growth.substrate_diffusion = substrate_diffusion;
 
 	growth.init(num_grains, min_dist, shape, load_data);
 

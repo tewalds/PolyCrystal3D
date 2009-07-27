@@ -69,6 +69,7 @@ public:
 	double ray_angle;
 	double start_angle;
 
+	bool substrate_diffusion;
 	double diffusion_probability;
 
 	vector<Grain> grains;
@@ -93,7 +94,8 @@ public:
 		ray_angle = 45;		
 	
 		diffusion_probability = 0.95;
-	
+		substrate_diffusion = true;
+
 		//define a blank grain
 		grains.push_back(Grain());
 
@@ -449,9 +451,10 @@ public:
 			if(grain == THREAT){
 				if(diffusion_probability > 0)
 					c = face_random_walk(c.x, c.y, c.z); //walk along the threats for random length
-			}else if(grain == 0 && c.z == 0){ // hit the substrate
+			}else if(substrate_diffusion && grain == 0 && c.z == 0){ // hit the substrate
 				c = substrate_random_walk(c.x, c.y); //walk till it hits a threat
 			}else{
+				i--; //shoot another ray
 				continue; //hit nothing, likely down a deep crevase to points that were already dropped
 			}
 			

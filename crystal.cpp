@@ -151,7 +151,7 @@ int main(int argc, char **argv){
 				"\t   --peaks      Output a peaks list for each timestep to peaks.%%05d      - off\n"
 				"\t   --voronei    Output a voronei map of initial grain placements         - off\n"
 				"\t   --graininit  Output initial grain placements and rotations            - off\n"
-				"\t   --growth     Output a growth list for each timestep to growth.%%05d   - off\n"
+				"\t   --growth     Output a growth list for each timestep to growth.%%05d    - off\n"
 				"\t   --datadump   Dump the layers in binary form (takes tons of space)     - off\n"
 				"\t   --pockets    Mark pockets in datadump, saving memory with --savemem   - off\n"
 				"\t   --savemem    Dump the data to disk (temporarily) to save memory       - off\n"

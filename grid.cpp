@@ -865,7 +865,7 @@ public:
 
 					Point * p = get_point(x, y, z);
 
-					if(p->grain != 0 && p->grain < MAXGRAIN && find(threats, threatsend, p->grain, p->face) == threatsend){
+					if(p->grain != 0 && p->grain < MAXGRAIN){
 						threatsend->grain = p->grain;
 						threatsend->face  = p->face;
 						++threatsend;

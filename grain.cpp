@@ -47,7 +47,7 @@ struct Face {
 	}
 
 	void dump(FILE * fd) const {
-		fprintf(fd, "%f,%f,%f,%f,%f,%f,%d,%d\n", A, B, C, D, F, dF, flux, threats);
+		fprintf(fd, "%.10f,%.10f,%.10f,%.10f,%.10f,%.10f,%d,%d\n", A, B, C, D, F, dF, flux, threats);
 	}
 
 	double fluxamnt(){

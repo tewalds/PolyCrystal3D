@@ -187,6 +187,7 @@ int main(int argc, char **argv){
 				"\t13 - Rhombic Dodecahedron\n"
 				"\t14 - Cuboctahedron\n"
 				"\t20 - Icosahedron\n"
+				"\t26 - Rhombic Cuboctahedron\n"
 				"\t252 - 252 sided near-sphere\n"
 			);
 			exit(255);
@@ -376,6 +377,7 @@ int main(int argc, char **argv){
 		case 13: shape = Rhombic_dodecahedron; break;
 		case 14: shape = Cuboctahedron;        break;
 		case 20: shape = Icosahedron;          break;
+		case 26: shape = Rhombic_Cuboctahedron;break;
 		case 252:shape = Sphere252;            break;
 		default: printf("Unknown shape\n"); exit(1);
 	}

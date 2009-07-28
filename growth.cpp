@@ -74,7 +74,7 @@ public:
 	double diffusion_probability;
 
 	vector<Grain> grains;
-	Grid grid;
+	Grid * grid;
 
 	tqueue<Request> request;
 	tqueue<int> response;
@@ -97,6 +97,8 @@ public:
 	
 		diffusion_probability = 0.95;
 		substrate_diffusion = true;
+
+		grid = new Grid;
 
 		//define a blank grain
 		grains.push_back(Grain());
@@ -150,8 +152,8 @@ public:
 			fclose(fd);
 		}
 
-		grid.output(0, grains);
-		grid.cleangrid(0, grains);
+		grid->output(0, grains);
+		grid->cleangrid(0, grains);
 		
 		double min_space_squared = min_space*min_space;
 
@@ -186,7 +188,7 @@ public:
 
 			g.color = (double)i/num_grains;
 
-			grid.set_point(g.x, g.y, 0, 1, i, 0);
+			grid->set_point(g.x, g.y, 0, 1, i, 0);
 			grains.push_back(g);
 		}
 
@@ -203,11 +205,11 @@ public:
 		if(opts.voronei){
 			echo("Finding closest grains ... ");
 			fflush(stdout);
-			grid.voroneimap(grains);
+			grid->voroneimap(grains);
 		}
 
-		grid.output(1, grains);
-		grid.cleangrid(1, grains);
+		grid->output(1, grains);
+		grid->cleangrid(1, grains);
 
 		echo("done in %d msec\n", time_msec() - starttime);
 	}
@@ -218,7 +220,7 @@ public:
 		int remain = grains.size() - 1;
 
 		for(int t = 2; t <= num_steps && !opts.interrupt; t++){
-			echo("Step %d, layers %d-%d, %d grains, %d Mb ... ", t, grid.zmin, grid.zmax, remain, grid.memory_usage()/(1024*1024));
+			echo("Step %d, layers %d-%d, %d grains, %d Mb ... ", t, grid->zmin, grid->zmax, remain, grid->memory_usage()/(1024*1024));
 			fflush(stdout);
 
 			starttime = time_msec();
@@ -237,25 +239,25 @@ public:
 			}
 
 			if(opts.fluxmap)
-				grid.resetflux();
+				grid->resetflux();
 
 			int growth = 0;
-			int raycount = (grid.zmin == 0 ? grid.planes[0]->taken : FIELD*FIELD);
+			int raycount = (grid->zmin == 0 ? grid->planes[0]->taken : FIELD*FIELD);
 			raycount *= ray_ratio;
 
 			//grow the grains
 			if(ray_step == 0 || t <= ray_step){
-//			if(grid.zmin == 0){
+//			if(grid->zmin == 0){
 //			if(true){
 				for(unsigned int i = 0; i < grains.size(); i++)
 					grains[i].grow_faces(growth_factor);
 			}else{
 				if(num_threads > 1){
 				//count threats
-					for(int z = grid.zmin; z < grid.zmax; z++)
+					for(int z = grid->zmin; z < grid->zmax; z++)
 						request.push(new Request(RT_COUNT_THREATS, z));
 
-					for(int z = grid.zmin; z < grid.zmax; z++)
+					for(int z = grid->zmin; z < grid->zmax; z++)
 						response.pop();
 
 				//ray trace
@@ -265,7 +267,7 @@ public:
 					for(int i = 0; i < num_threads*10; i++)
 						response.pop();
 				}else{
-					for(int z = grid.zmin; z < grid.zmax; z++)
+					for(int z = grid->zmin; z < grid->zmax; z++)
 						count_threats(z);
 
 					addflux(raycount);
@@ -294,16 +296,16 @@ public:
 			do{
 				thisgrowth = 0;
 				if(num_threads > 1){
-					for(int z = grid.zmin; z < grid.zmax; z++)
+					for(int z = grid->zmin; z < grid->zmax; z++)
 						request.push(new Request(RT_THREAT_POINTS, z, t, count));
 
-					for(int z = grid.zmin; z < grid.zmax; z++)
+					for(int z = grid->zmin; z < grid->zmax; z++)
 						thisgrowth += (uint64_t)response.pop();
 				}else{
-					for(int z = grid.zmin; z < grid.zmax; z++)
+					for(int z = grid->zmin; z < grid->zmax; z++)
 						thisgrowth += run_layer(z, t, count);
 				}
-				mem = grid.growgrid();
+				mem = grid->growgrid();
 
 				growth += thisgrowth;
 				count++;
@@ -317,31 +319,31 @@ public:
 			starttime = time_msec();
 
 			//output and finished data and images
-			grid.cleangrid(t, grains);
-			grid.output(t, grains);
+			grid->cleangrid(t, grains);
+			grid->output(t, grains);
 			if(opts.growth)
 				growthstats(t);
 
 			echo("output in %d msec\n", time_msec() - starttime);
 
 			if(!mem){
-				echo("Couldn't allocate more memory, current usage ~ %d Mb\n", grid.memory_usage()/(1024*1024));
+				echo("Couldn't allocate more memory, current usage ~ %d Mb\n", grid->memory_usage()/(1024*1024));
 				break;
 			}
 
-			remain = grid.graincount(grains.size());
+			remain = grid->graincount(grains.size());
 			if(remain <= end_grains){
 				echo("Hit the grain limit: %d grains left\n", remain);
 				break;
 			}
 			
-			if(max_memory && grid.memory_usage()/(1024*1024) > max_memory){
+			if(max_memory && grid->memory_usage()/(1024*1024) > max_memory){
 				echo("Hit the memory limit: %d Mb\n", max_memory);
 				break;
 			}
 		}
 
-		grid.dump(grains);
+		grid->dump(grains);
 		echo("Finished in %d sec\n", (time_msec() - start)/1000);
 	}
 
@@ -367,18 +369,18 @@ public:
 			for(int x = 0; x < FIELD; x++){
 
 			//point isn't threatened
-				if(grid.get_grain(x,y,z) != THREAT)
+				if(grid->get_grain(x,y,z) != THREAT)
 					continue;
 
 				Threat threats[27];
-				Threat * threats_end = grid.check_face_threats(threats, x, y, z);
+				Threat * threats_end = grid->check_face_threats(threats, x, y, z);
 
 				//add to only one of the grains+faces, choosing which randomly
 				if(threats != threats_end){ //needed in case the bottom drops off for being inactive
 					Threat * i = threats + (rand() % (threats_end - threats));
 					INCR(grains[i->grain].threats);
 					INCR(grains[i->grain].faces[i->face].threats);
-					grid.set_diffprob(x, y, z, (uint8_t)(diffusion_probability * grains[i->grain].faces[i->face].P * 255));
+					grid->set_diffprob(x, y, z, (uint8_t)(diffusion_probability * grains[i->grain].faces[i->face].P * 255));
 				}
 			}
 		}
@@ -391,7 +393,7 @@ public:
 			for(int x = 0; x < FIELD; x++){
 
 			//point isn't threatened
-				Point * p = grid.get_point(x, y, z);
+				Point * p = grid->get_point(x, y, z);
 
 				if(p->grain == FULLPOINT) //skip this whole sector if it's full
 					break;
@@ -400,7 +402,7 @@ public:
 					continue;
 
 				uint16_t threats[27];
-				uint16_t * threats_end = grid.check_grain_threats(threats, x, y, z);
+				uint16_t * threats_end = grid->check_grain_threats(threats, x, y, z);
 
 			//check how many took this point this time step, moving valid ones down and ignoring ones that are only a threat
 				for(uint16_t * a = threats; a != threats_end; ){
@@ -429,7 +431,7 @@ public:
 				}
 
 				//save this point
-				grid.set_point(x, y, z, t, best, min_dist.face);
+				grid->set_point(x, y, z, t, best, min_dist.face);
 				INCR(grains[best].growth);
 				INCR(grains[best].size);
 				INCR(grains[best].faces[min_dist.face].growth);
@@ -450,7 +452,7 @@ public:
 			Ray ray;
 			ray.x = unitrand() * FIELD;
 			ray.y = unitrand() * FIELD;
-			ray.z = grid.zmax-1;
+			ray.z = grid->zmax-1;
 
 			do{
 				costheta = pow(unitrand(), raypow);
@@ -464,10 +466,10 @@ public:
 
 			Coord c = raytrace(ray); //trace the ray until it hits a threat or the substrate
 			
-			int grain = grid.get_grain(c.x, c.y, c.z);
+			int grain = grid->get_grain(c.x, c.y, c.z);
 
 			if(opts.fluxmap)
-				grid.incrflux(c.x, c.y);
+				grid->incrflux(c.x, c.y);
 			
 			if(grain == THREAT){
 				if(diffusion_probability > 0)
@@ -481,14 +483,14 @@ public:
 			
 			//add to only one of the grains+faces, choosing which randomly
 			Threat threats[27];
-			Threat * threats_end = grid.check_face_threats(threats, c.x, c.y, c.z);
+			Threat * threats_end = grid->check_face_threats(threats, c.x, c.y, c.z);
 			Threat * i = threats + (rand() % (threats_end - threats));
 			INCR(grains[i->grain].faces[i->face].flux);
 		}
 	}
 
 	Coord raytrace(Ray ray){
-		while(ray.incr(grid.zmin) && grid.get_grain(ray.X(), ray.Y(), ray.Z()) != THREAT); //empty body
+		while(ray.incr(grid->zmin) && grid->get_grain(ray.X(), ray.Y(), ray.Z()) != THREAT); //empty body
 
 		return Coord(ray.X(), ray.Y(), ray.Z());
 	}
@@ -501,13 +503,13 @@ public:
 				case 2: y++; break;
 				case 3: y--; break;
 			}
-		}while(grid.get_grain(x, y, 0) != THREAT);
+		}while(grid->get_grain(x, y, 0) != THREAT);
 
 		return Coord(x, y, 0);
 	}
 
 	Coord face_random_walk(int x, int y, int z){
-		Point * p = grid.get_point(x, y, z);
+		Point * p = grid->get_point(x, y, z);
 
 		while((rand() % 256) < p->diffprob){
 retry: //used to retry on when the random choice below is invalid, without re-checking the probability
@@ -517,11 +519,11 @@ retry: //used to retry on when the random choice below is invalid, without re-ch
 				case 1: x--; break;
 				case 2: y++; break;
 				case 3: y--; break;
-				case 4: if(z == grid.zmax - 1){ goto retry; } else { z++; break; }
-				case 5: if(z == grid.zmin    ){ goto retry; } else { z--; break; }
+				case 4: if(z == grid->zmax - 1){ goto retry; } else { z++; break; }
+				case 5: if(z == grid->zmin    ){ goto retry; } else { z--; break; }
 			}
 
-			p = grid.get_point(x, y, z);
+			p = grid->get_point(x, y, z);
 
 			//undo invalid moves			
 			if(p->grain != THREAT){
@@ -563,10 +565,10 @@ retry: //used to retry on when the random choice below is invalid, without re-ch
 		ray.(a,b,c) = ray.(a,b,c) / (length of ray.(a,b,c))
 
 		while(length > 0){
-			if(!ray.incr(grid.zmin))
+			if(!ray.incr(grid->zmin))
 				break;
 				
-			Point * p = grid.get_point(x, y, z);
+			Point * p = grid->get_point(x, y, z);
 
 			//move one unit in the direction
 			//substract face diffusion length factor from length

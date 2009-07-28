@@ -119,6 +119,7 @@ int main(int argc, char **argv){
 	int    end_grains = 20;
 	double min_dist   = 0.0;
 	double ray_angle  = 0;
+	double ray_cutoff = 85;
 	int    ray_step   = 10;
 	double ray_ratio  = 1.0;
 	double diffusion  = 0;
@@ -169,11 +170,12 @@ int main(int argc, char **argv){
 				"\t-r --raystep    Step to start using ray tracing to add flux, 0 to disable rays [%d]\n"
 				"\t-R --rayratio   Number of rays to generate per occupied point [%.2f]\n"
 				"\t-a --angleconst Angle constant to center the ray distribution around (evap: 50+, sputter: 1-2, lpcvd: 0) [%.2f]\n"
+				"\t-c --cutoff     Cutoff angle for rays as measured from vertical, anything bigger is ignored [%.1f]\n"
 				"\t-D --diffusion  Probability of each diffusion step [0,1), only useful with raytracing [%.2f]\n"
 				"\t   --no-subdiff Turn off substrate diffusion, shoot extra rays until they hit a grain\n"
 				"\t-s --shape      Shape (4,5,6,7,8,9,12,13,14,20,252) [%d]\n"
 				"\t   --shapes     List the available shapes\n",
-				num_steps, num_grains, end_grains, start_angle, growth_factor, ray_step, ray_ratio, ray_angle, diffusion, shape_id);
+				num_steps, num_grains, end_grains, start_angle, growth_factor, ray_step, ray_ratio, ray_angle, ray_cutoff, diffusion, shape_id);
 			exit(255);
 		} else if(strcmp(ptr, "--shapes") == 0){
 			printf("List of chooseable shapes\n"
@@ -331,6 +333,11 @@ int main(int argc, char **argv){
 			if(ptr == NULL) { printf("Please specify ray angle constant\n"); exit(1); }
 			ray_angle = atof(ptr);
 			if(ray_angle < 0){ printf("Ray angle constant out of range\n"); exit(1); }
+		} else if(strcmp(ptr, "-c") == 0 || strcmp(ptr, "--cutoff") == 0) {
+			ptr = argv[++i];
+			if(ptr == NULL) { printf("Please specify ray cutoff angle\n"); exit(1); }
+			ray_cutoff = atof(ptr);
+			if(ray_cutoff < 1 || ray_cutoff > 89){ printf("Ray cutoff angle out of range\n"); exit(1); }
 		} else if(strcmp(ptr, "-D") == 0 || strcmp(ptr, "--diffusion") == 0) {
 			ptr = argv[++i];
 			if(ptr == NULL) { printf("Please specify diffusion probability\n"); exit(1); }
@@ -393,9 +400,10 @@ int main(int argc, char **argv){
 	growth.max_memory = max_memory;
 
 	growth.start_angle = start_angle;
-	growth.ray_angle = ray_angle;
-	growth.ray_step  = ray_step;
-	growth.ray_ratio = ray_ratio;
+	growth.ray_angle   = ray_angle;
+	growth.ray_cutoff  = ray_cutoff;
+	growth.ray_step    = ray_step;
+	growth.ray_ratio   = ray_ratio;
 	
 	growth.diffusion_probability = diffusion;
 	growth.substrate_diffusion = substrate_diffusion;

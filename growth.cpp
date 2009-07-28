@@ -67,6 +67,7 @@ public:
 	int ray_step;
 	double ray_ratio;
 	double ray_angle;
+	double ray_cutoff;
 	double start_angle;
 
 	bool substrate_diffusion;
@@ -91,7 +92,8 @@ public:
 		start_angle = 0;
 		ray_step = 10;
 		ray_ratio = 1.0;
-		ray_angle = 45;		
+		ray_angle = 0;
+		ray_cutoff = 85;
 	
 		diffusion_probability = 0.95;
 		substrate_diffusion = true;
@@ -441,7 +443,7 @@ public:
 	void addflux(int num){
 		double costheta, sintheta, phi;
 		
-		double cutoffcos = cos(85.0 * M_PI/180); //cutoff angle of 85 degrees
+		double cutoffcos = cos(ray_cutoff * M_PI/180); //cutoff angle of 85 degrees
 		double raypow = 1.0/(1.0 + ray_angle);
 
 		for(int i = 0; i < num; i++){

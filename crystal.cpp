@@ -171,7 +171,7 @@ int main(int argc, char **argv){
 				"\t-a --angleconst Angle constant to center the ray distribution around (evap: 50+, sputter: 1-2, lpcvd: 0) [%.2f]\n"
 				"\t-D --diffusion  Probability of each diffusion step [0,1), only useful with raytracing [%.2f]\n"
 				"\t   --no-subdiff Turn off substrate diffusion, shoot extra rays until they hit a grain\n"
-				"\t-s --shape      Shape (4,5,6,7,8,9,12,13,14,20,252) [%d]\n"
+				"\t-s --shape      Shape (4,5,6,7,8,9,12,13,14,20,26,252) [%d]\n"
 				"\t   --shapes     List the available shapes\n",
 				num_steps, num_grains, end_grains, start_angle, growth_factor, ray_step, ray_ratio, ray_angle, diffusion, shape_id);
 			exit(255);

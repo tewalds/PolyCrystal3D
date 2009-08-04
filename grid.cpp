@@ -302,7 +302,7 @@ struct Plane {
 				Point * p = get(x, y);
 				int grain = p->grain;
 				if(grain != 0 && grain < MAXGRAIN){
-					RGB rgb = RGB::HSV(grains[grain].color, 1.0, 1.0);
+					RGB rgb = RGB(HSV(grains[grain].color, 1.0, 1.0));
 					int color = gdImageColorAllocate(im, rgb.r, rgb.g, rgb.b);
 					gdImageSetPixel(im, x, y, color);
 				}
@@ -665,7 +665,7 @@ public:
 			for(int x = 0; x < FIELD; x++){
 				if(heights[y][x]){
 					int grain = get_grain(x, y, heights[y][x]);
-					RGB rgb = RGB::HSV(grains[grain].color, 1.0 - ((double)(heights[y][x] - zmin)/diffheight), 1.0);
+					RGB rgb = RGB(HSV(grains[grain].color, 1.0 - ((double)(heights[y][x] - zmin)/diffheight), 1.0));
 					int color = gdImageColorAllocate(im, rgb.r, rgb.g, rgb.b);
 					gdImageSetPixel(im, x, y, color);
 				}
@@ -713,7 +713,7 @@ public:
 			for(int x = 0; x < FIELD; x++){
 				if(heights[y][x]){
 					int grain = get_grain(x, y, heights[y][x]);
-					RGB rgb = RGB::HSV(grains[grain].color, 1.0, 1.0);
+					RGB rgb = RGB(HSV(grains[grain].color, 1.0, 1.0));
 					int color = gdImageColorAllocate(im, rgb.r, rgb.g, rgb.b);
 					gdImageSetPixel(im, x, y, color);
 				}
@@ -750,7 +750,7 @@ public:
 
 				RGB rgb;
 				if(x != grains[grain].x || y != grains[grain].y)
-					rgb = RGB::HSV(grains[grain].color, 1.0, 1.0);
+					rgb = RGB(HSV(grains[grain].color, 1.0, 1.0));
 				int color = gdImageColorAllocate(im, rgb.r, rgb.g, rgb.b);
 				gdImageSetPixel(im, x, y, color);
 			}

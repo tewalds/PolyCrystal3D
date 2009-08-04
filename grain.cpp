@@ -67,8 +67,8 @@ struct Face {
 
 	void calc_color(double color){
 		double slope = atan(A/C)*2/M_PI;
-		if(slope < 0) rgb = RGB::HSV(color, slope + 1.0, 1.0);
-		else          rgb = RGB::HSV(color, 1.0, 1.0 - slope);
+		if(slope < 0) rgb = RGB(HSV(color, slope + 1.0, 1.0));
+		else          rgb = RGB(HSV(color, 1.0, 1.0 - slope));
 	}
 	
 	void rotate(double t1, double t2, double phi){
@@ -126,6 +126,34 @@ public:
 		color = (double)rand()/RAND_MAX;
 	}
 
+	void set_color(double c){
+		color = c;
+		fix_face_colors();
+	}
+
+	void fix_face_colors(){
+		for(vector<Face>::iterator fit = faces.begin(); fit != faces.end(); ++fit)
+			fit->calc_color(color);
+	}
+
+	void directional_color(){
+		double vec[3];
+		vec[0] = fabs(sin(phi)*sin(theta1));
+		vec[1] = fabs(cos(theta1)*sin(phi));
+		vec[2] = fabs(cos(phi));
+
+		sort(vec, vec+3);
+
+		vec[0] /= vec[2];
+		vec[1] /= vec[2];
+		vec[2] /= vec[2];
+
+		HSV hsv = HSV(RGB(vec[0], vec[1] - vec[0], vec[2] - vec[1]));
+		color = hsv.h;
+
+		fix_face_colors();
+	}
+
 	void add_faces(const double *faces, int num_faces){
 		for(int i = 0; i < num_faces*5; i += 5)
 			add_face(faces[i+0], faces[i+1], faces[i+2], faces[i+3], faces[i+4]);
@@ -134,6 +162,7 @@ public:
 		add_face(Face(a, b, c, d, 0, p));
 	}
 	void add_face(Face face){
+		face.calc_color(color);
 		faces.push_back(face);
 	}
 
@@ -164,10 +193,10 @@ public:
 		theta2 = t2;
 		phi	= p;
 
-		for(vector<Face>::iterator fit = faces.begin(); fit != faces.end(); ++fit){
+		for(vector<Face>::iterator fit = faces.begin(); fit != faces.end(); ++fit)
 			fit->rotate(t1, t2, p);
-			fit->calc_color(color);
-		}
+
+		fix_face_colors();
 	}
 
 	RGB get_face_color(int face) const {

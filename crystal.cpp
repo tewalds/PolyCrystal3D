@@ -13,6 +13,7 @@
 #include "gd.h"
 #include <pthread.h>
 #include <queue>
+#include <algorithm>
 
 using namespace std;
 
@@ -52,6 +53,7 @@ struct Options {
 	bool savemem;   // dump the data grid temporarily to save memory
 	bool pockets;   // mark and drop pockets, potentially save more memory and get better data dumps
 	bool interrupt; // set by the interrupt handler, meaning finish your current iteration then exit
+	bool randcolor; // use random colours instead of directional colours
 } opts;
 
 inline void echo(const char *format, ...){
@@ -106,6 +108,7 @@ int main(int argc, char **argv){
 	opts.savemem   = false;
 	opts.pockets   = false;
 	opts.interrupt = false;
+	opts.randcolor = false;
 
 	char * dir        = NULL;
 	int    max_memory = 0;
@@ -158,7 +161,8 @@ int main(int argc, char **argv){
 				"\t   --savemem    Dump the data to disk (temporarily) to save memory       - off\n"
 				"\t   --dataformat Output a description of the binary format\n"
 				"\t-q --quiet      Disable all output, though they can be re-enabled individually\n"
-				"\t-v --verbose    Enable all output options\n");
+				"\t-v --verbose    Enable all output options\n"
+				"\t   --randcolor  Use random grain coloring, not directional coloring      - off\n");
 		printf(	"\nRun Options:\n"
 				"\t-l --load       Load location and rotation data from graininit, still needs shapes and grain count\n"
  				"\t-n --steps      Number of time steps to run [%d]\n"
@@ -271,6 +275,8 @@ int main(int argc, char **argv){
 			opts.savemem = true;
 		} else if(strcmp(ptr, "--pockets") == 0) {
 			opts.pockets = true;
+		} else if(strcmp(ptr, "--randcolor") == 0) {
+			opts.randcolor = true;
 		} else if(strcmp(ptr, "--dataformat") == 0) {
 			Point point;
 			printf("The binary format is a one file per layer, in a large array Point structures\n");

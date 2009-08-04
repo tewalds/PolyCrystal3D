@@ -186,7 +186,10 @@ public:
 				g.rotate(2.0*M_PI*unitrand(), 2.0*M_PI*unitrand(), acos(pow(unitrand(), 1.0/(1.0 + start_angle))));
 			}
 
-			g.color = (double)i/num_grains;
+			if(opts.randcolor)
+				g.set_color((double)i/num_grains);
+			else
+				g.directional_color();
 
 			grid->set_point(g.x, g.y, 0, 1, i, 0);
 			grains.push_back(g);

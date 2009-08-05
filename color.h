@@ -9,15 +9,21 @@ struct RGB {
 	}
 	
 	RGB(unsigned char R, unsigned char G, unsigned char B){
+		set(R, G, B);
+	}
+
+	RGB(double R, double G, double B){
+		set(R, G, B);
+	}
+
+	void set(unsigned char R, unsigned char G, unsigned char B){
 		r = R;
 		g = G;
 		b = B;
 	}
 
-	RGB(double R, double G, double B){
-		r = R*255;
-		g = G*255;
-		b = B*255;
+	void set(double R, double G, double B){
+		set((unsigned char)(R*255), (unsigned char)(G*255), (unsigned char)(B*255));
 	}
 
 	RGB(HSV);
@@ -52,7 +58,7 @@ RGB::RGB(HSV hsv){
 	// RGB Results:Number 0-255
 
 	if(hsv.s == 0){
-		r = g = b = hsv.v;
+		set(hsv.v, hsv.v, hsv.v);
 		return;
 	}
 
@@ -63,15 +69,15 @@ RGB::RGB(HSV hsv){
 	double var_3 = hsv.v * ( 1.0 - hsv.s * (1.0 - ( var_H - (double)var_i ) ) );
 
 	switch(var_i){
-		case 0: r = hsv.v; g = var_3; b = var_1; return;
-		case 1: r = var_2; g = hsv.v; b = var_1; return;
-		case 2: r = var_1; g = hsv.v; b = var_3; return;
-		case 3: r = var_1; g = var_2; b = hsv.v; return;
-		case 4: r = var_3; g = var_1; b = hsv.v; return;
-		case 5: r = hsv.v; g = var_1; b = var_2; return;
+		case 0: set(hsv.v, var_3, var_1); return;
+		case 1: set(var_2, hsv.v, var_1); return;
+		case 2: set(var_1, hsv.v, var_3); return;
+		case 3: set(var_1, var_2, hsv.v); return;
+		case 4: set(var_3, var_1, hsv.v); return;
+		case 5: set(hsv.v, var_1, var_2); return;
 	}
 
-	r = g = b = 0;
+	set((unsigned char)0, 0, 0);
 	return;
 }
 

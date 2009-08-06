@@ -42,7 +42,8 @@ struct Options {
 	bool timestats; // output time stats
 	bool layerstats;// output layer stats
 	bool slopemap;  // map of slopes, easiest visualization
-	bool heightmap; // map of heights, may be possible to turn into a 3d model
+	bool heightmap; // map of heights
+	bool heightdump;// dump of heights, may be possible to turn into a 3d model
 	bool timemap;   // map of grains as a top down view, may be useful for stats?
 	bool fluxdump;  // dump of amount of flux received per x,y coord
 	bool peaks;     // dump of the active peaks per timestep: id,x,y,z
@@ -101,6 +102,7 @@ int main(int argc, char **argv){
 	opts.layermap  = true;
 	opts.slopemap  = true;
 	opts.heightmap = false;
+	opts.heightdump= false;
 	opts.timemap   = false;
 	opts.fluxdump  = false;
 	opts.peaks     = false;
@@ -154,6 +156,7 @@ int main(int argc, char **argv){
 				"\t   --slopemap   Output a slope  map  for each timestep to slope.%%05d.png  - on\n"
 				"\t   --timemap    Output a time   map  for each timestep to time.%%05d.png   - off\n"
 				"\t   --heightmap  Output a height map  for each timestep to height.%%05d.png - off\n"
+				"\t   --heightdump Output a height dump for each timestep to height.%%05d.dat - off\n"
 				"\t   --fluxdump   Output a flux   dump for each timestep to flux.%%05d.dat   - off\n"
 				"\t   --datadump   Output a binary dump for each layer    to data.%%05d.dat   - off\n"
 				"\t   --growth     Output a growth list for each timestep to growth.%%05d.csv - off\n"
@@ -224,6 +227,7 @@ int main(int argc, char **argv){
 			opts.timestats = true;
 			opts.slopemap  = true;
 			opts.heightmap = true;
+			opts.heightdump= true;
 			opts.timemap   = true;
 			opts.fluxdump  = true;
 			opts.peaks     = true;
@@ -241,6 +245,7 @@ int main(int argc, char **argv){
 			opts.timestats = false;
 			opts.slopemap  = false;
 			opts.heightmap = false;
+			opts.heightdump= false;
 			opts.timemap   = false;
 			opts.fluxdump  = false;
 			opts.peaks     = false;
@@ -251,7 +256,7 @@ int main(int argc, char **argv){
 			opts.datadump  = false;
 			opts.savemem   = false;
 			opts.pockets   = false;
-		} else if(strcmp(ptr, "-S") == 0 || strcmp(ptr, "--stats")){
+		} else if(strcmp(ptr, "-S") == 0 || strcmp(ptr, "--stats") == 0){
 			opts.timestats  = true;
 			opts.layerstats = true;
 		} else if(strcmp(ptr, "--cmdline") == 0) {
@@ -266,6 +271,8 @@ int main(int argc, char **argv){
 			opts.slopemap = true;
 		} else if(strcmp(ptr, "--heightmap") == 0) {
 			opts.heightmap = true;
+		} else if(strcmp(ptr, "--heightdump") == 0) {
+			opts.heightdump = true;
 		} else if(strcmp(ptr, "--timemap") == 0) {
 			opts.timemap = true;
 		} else if(strcmp(ptr, "--fluxdump") == 0) {

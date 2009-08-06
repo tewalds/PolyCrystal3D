@@ -367,6 +367,8 @@ public:
 			slopemap(t, grains);
 		if(opts.heightmap)
 			heightmap(t, grains);
+		if(opts.heightdump)
+			heightdump(t);
 		if(opts.timemap)
 			timemap(t, grains);
 		if(opts.timestats)
@@ -637,19 +639,27 @@ public:
 	
 	void incrflux(int x, int y){
 		fix_period(x, y);
-		INCR(flux[y][x]);		
+		INCR(flux[y][x]);
 	}
 
 	void fluxdump(int t) const {
-	//dump to a data file
 		char filename[50];
-		FILE* fd;
-
 		sprintf(filename, "flux.%05d.dat", t);
-		fd = fopen(filename, "wb");
+		FILE * fd = fopen(filename, "wb");
 		
 		for(int y = 0; y < FIELD; y++)
 			if(fwrite(flux[y], sizeof(uint8_t), FIELD, fd));
+
+		fclose(fd);
+	}
+
+	void heightdump(int t) const {
+		char filename[50];
+		sprintf(filename, "height.%05d.dat", t);
+		FILE * fd = fopen(filename, "wb");
+
+		for(int y = 0; y < FIELD; y++)
+			if(fwrite(heights[y], sizeof(uint16_t), FIELD, fd));
 
 		fclose(fd);
 	}

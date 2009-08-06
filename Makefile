@@ -3,7 +3,7 @@ CC			= g++
 CFLAGS		= -Wall -pedantic -fno-strict-aliasing
 
 CRYSTAL     = crystal
-CRYSTAL_L	= -lpthread -lrt -lgd -lpng -lz
+CRYSTAL_L	= -lgd -lpng -lz -lpthread -lrt
 
 CSECTION    = csection
 CSECTION_L	= -lgd -lpng -lz

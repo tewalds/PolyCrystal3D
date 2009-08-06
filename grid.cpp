@@ -210,12 +210,12 @@ struct Plane {
 		return grid[y].unmark(x);
 	}
 
-	void dump(int level, int sector = -1){
+	void dump(int layer, int sector = -1){
 	//dump to a data file
 
 		if(!data_fd){
 			char filename[50];
-			sprintf(filename, "grid.%05d", level);
+			sprintf(filename, "data.%05d.dat", layer);
 
 			//create the file if needed... stupid fopen not having a mode to open a file in write mode, 
 			//  creating it if needed, and not truncating it if it already exists
@@ -235,23 +235,23 @@ struct Plane {
 		}
 	}
 
-	void delfile(int level){
+	void delfile(int layer){
 		if(data_fd){
 			fclose(data_fd);
 			data_fd = NULL;
 		}
 		
 		char filename[50];
-		sprintf(filename, "grid.%05d", level);
+		sprintf(filename, "data.%05d.dat", layer);
 
 		remove(filename);			
 	}
 
-	bool load(int level){
+	bool load(int layer){
 		char filename[50];
 		FILE * fd;
 
-		sprintf(filename, "grid.%05d", level);
+		sprintf(filename, "data.%05d.dat", layer);
 		fd = fopen(filename, "rb");
 
 		if(!fd)
@@ -265,7 +265,7 @@ struct Plane {
 		return true;
 	}
 	
-	void stats(int level, int maxgraincount){
+	void layerstats(int layer, int maxgraincount){
 /*
 - grain count
 - mean grain area
@@ -287,12 +287,12 @@ struct Plane {
 			if(counts[i])
 				num++;
 	
-		FILE * fd = fopen("levelstats", "a");
-		fprintf(fd, "%d,%d,%f,%f\n", level, num, (double)(FIELD*FIELD - counts[0])/num, (double)counts[0]/(FIELD*FIELD));
+		FILE * fd = fopen("layerstats.csv", "a");
+		fprintf(fd, "%d,%d,%f,%f\n", layer, num, (double)(FIELD*FIELD - counts[0])/num, (double)counts[0]/(FIELD*FIELD));
 		fclose(fd);
 	}
 	
-	void layermap(int level, vector<Grain> & grains){
+	void layermap(int layer, vector<Grain> & grains){
 	//generate a png layermap
 		gdImagePtr im = gdImageCreateTrueColor(FIELD, FIELD);
 		gdImageFill(im, 0, 0, gdImageColorAllocate(im, 0, 0, 0));
@@ -310,7 +310,7 @@ struct Plane {
 		}
 
 		char filename[50];
-		sprintf(filename, "level.%05d.png", level);
+		sprintf(filename, "layer.%05d.png", layer);
 		FILE * fd = fopen(filename, "wb");
 		gdImagePng(im, fd);
 		fclose(fd);
@@ -361,16 +361,16 @@ public:
 	}
 
 	void output(int t, vector<Grain> & grains){
-		if(opts.fluxmap)
-			fluxmap(t);
+		if(opts.fluxdump)
+			fluxdump(t);
 		if(opts.slopemap)
 			slopemap(t, grains);
 		if(opts.heightmap)
 			heightmap(t, grains);
 		if(opts.timemap)
 			timemap(t, grains);
-		if(opts.stats)
-			stats(t, grains.size());
+		if(opts.timestats)
+			timestats(t, grains.size());
 		if(opts.peaks)
 			peaks(t, grains.size());
 	}
@@ -400,7 +400,7 @@ public:
 		}
 
 		char filename[50];
-		sprintf(filename, "peaks.%05d", t);
+		sprintf(filename, "peaks.%05d.csv", t);
 		FILE * fd = fopen(filename, "w");
 		for(int i = 0; i < maxgraincount; i++){
 			if(peaks[i].z)
@@ -428,7 +428,7 @@ public:
 		return num;
 	}
 
-	void stats(int t, int maxgraincount){
+	void timestats(int t, int maxgraincount){
 /*
 - number of surface grains (count of grains in height map)
 - mean height (average max z)
@@ -451,7 +451,7 @@ public:
 		
 		double rms = sqrt(totalms/(FIELD*FIELD));
 	
-		FILE * fd = fopen("timestats", "a");
+		FILE * fd = fopen("timestats.csv", "a");
 		fprintf(fd, "%d,%d,%f,%f\n", t, num, mean, rms);
 		fclose(fd);
 	}
@@ -606,8 +606,8 @@ public:
 				planes[i]->load(i);
 			if(opts.layermap)
 				planes[i]->layermap(i, grains);
-			if(opts.stats)
-				planes[i]->stats(i, grains.size());
+			if(opts.layerstats)
+				planes[i]->layerstats(i, grains.size());
 			if(opts.datadump)
 				planes[i]->dump(i);
 
@@ -640,12 +640,12 @@ public:
 		INCR(flux[y][x]);		
 	}
 
-	void fluxmap(int t) const {
+	void fluxdump(int t) const {
 	//dump to a data file
 		char filename[50];
 		FILE* fd;
 
-		sprintf(filename, "fluxmap.%05d", t);
+		sprintf(filename, "flux.%05d.dat", t);
 		fd = fopen(filename, "wb");
 		
 		for(int y = 0; y < FIELD; y++)

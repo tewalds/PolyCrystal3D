@@ -39,11 +39,12 @@ using namespace std;
 struct Options {
 	bool cmdline;   // output the command line that was used
 	bool console;   // output the console output to a file too
-	bool stats;     // output time and level stats
+	bool timestats; // output time stats
+	bool layerstats;// output layer stats
 	bool slopemap;  // map of slopes, easiest visualization
 	bool heightmap; // map of heights, may be possible to turn into a 3d model
 	bool timemap;   // map of grains as a top down view, may be useful for stats?
-	bool fluxmap;   // dump of amount of flux received per x,y coord
+	bool fluxdump;  // dump of amount of flux received per x,y coord
 	bool peaks;     // dump of the active peaks per timestep: id,x,y,z
 	bool layermap;  // map of grains of a layer, may be useful for stats?
 	bool voronei;   // voronei diagram of initial grain placements
@@ -67,7 +68,7 @@ inline void echo(const char *format, ...){
 	printf("%s", buffer);
 	
 	if(opts.console){
-		FILE *fd = fopen("console", "a");
+		FILE *fd = fopen("console.txt", "a");
 		fprintf(fd, "%s", buffer);
 		fclose(fd);
 	}
@@ -95,13 +96,14 @@ int main(int argc, char **argv){
 
 	opts.cmdline   = true;
 	opts.console   = true;
-	opts.stats     = true;
+	opts.layerstats= true;
+	opts.timestats = true;
+	opts.layermap  = true;
 	opts.slopemap  = true;
 	opts.heightmap = false;
 	opts.timemap   = false;
-	opts.fluxmap   = false;
+	opts.fluxdump  = false;
 	opts.peaks     = false;
-	opts.layermap  = true;
 	opts.voronei   = false;
 	opts.graininit = false;
 	opts.datadump  = false;
@@ -144,25 +146,27 @@ int main(int argc, char **argv){
 		printf(	"\t-t --threads    Number of worker threads [%d]\n", threads);
 #endif
 		printf(	"\nOutput Options:\n"
-				"\t   --cmdline    Output the command line to cmdline (implied with -z)     - on\n"
-				"\t   --console    Copy the console output to console                       - on\n"
-				"\t   --stats      Output stats to timestats and levelstats                 - on\n"
-				"\t   --layermap   Output a layer  map for each layer    to level.%%05d.png  - on\n"
-				"\t   --slopemap   Output a slope  map for each timestep to slope.%%05d.png  - on\n"
-				"\t   --heightmap  Output a height map for each timestep to height.%%05d.png - off\n"
-				"\t   --timemap    Output a time   map for each timestep to time.%%05d.png   - off\n"
-				"\t   --fluxmap    Output a flux   map for each timestep to flux.%%05d       - off\n"
-				"\t   --peaks      Output a peaks list for each timestep to peaks.%%05d      - off\n"
-				"\t   --voronei    Output a voronei map of initial grain placements         - off\n"
-				"\t   --graininit  Output initial grain placements and rotations            - off\n"
-				"\t   --growth     Output a growth list for each timestep to growth.%%05d    - off\n"
-				"\t   --datadump   Dump the layers in binary form (takes tons of space)     - off\n"
-				"\t   --pockets    Mark pockets in datadump, saving memory with --savemem   - off\n"
-				"\t   --savemem    Dump the data to disk (temporarily) to save memory       - off\n"
+				"\t   --cmdline    Output the command line                to cmdline.txt     - on\n"
+				"\t   --console    Copy the console output                to console.txt     - on\n"
+				"\t   --timestats  Output stats per timestep              to timestats.csv   - on\n"
+				"\t   --layerstats Output stats per layer                 to layerstats.csv  - on\n"
+				"\t   --layermap   Output a layer  map  for each layer    to layer.%%05d.png  - on\n"
+				"\t   --slopemap   Output a slope  map  for each timestep to slope.%%05d.png  - on\n"
+				"\t   --timemap    Output a time   map  for each timestep to time.%%05d.png   - off\n"
+				"\t   --heightmap  Output a height map  for each timestep to height.%%05d.png - off\n"
+				"\t   --fluxdump   Output a flux   dump for each timestep to flux.%%05d.dat   - off\n"
+				"\t   --datadump   Output a binary dump for each layer    to data.%%05d.dat   - off\n"
+				"\t   --growth     Output a growth list for each timestep to growth.%%05d.csv - off\n"
+				"\t   --peaks      Output a peaks  list for each timestep to peaks.%%05d.csv  - off\n"
+				"\t   --graininit  Output initial grain placements        to grains.csv      - off\n"
+				"\t   --voronei    Output a voronei map of initial grains to voronei.png     - off\n"
+				"\t   --pockets    Mark pockets in datadump, saving memory with --savemem    - off\n"
+				"\t   --savemem    Dump the data to disk (temporarily) to save memory        - off\n"
+				"\t   --randcolor  Use random grain coloring, not directional coloring       - off\n"
 				"\t   --dataformat Output a description of the binary format\n"
 				"\t-q --quiet      Disable all output, though they can be re-enabled individually\n"
 				"\t-v --verbose    Enable all output options\n"
-				"\t   --randcolor  Use random grain coloring, not directional coloring      - off\n");
+				"\t-S --stats      Equivalent to --timestats --layerstats\n");
 		printf(	"\nRun Options:\n"
 				"\t-l --load       Load location and rotation data from graininit, still needs shapes and grain count\n"
  				"\t-n --steps      Number of time steps to run [%d]\n"
@@ -216,11 +220,12 @@ int main(int argc, char **argv){
 		} else if(strcmp(ptr, "-v") == 0 || strcmp(ptr, "--verbose") == 0) {
 			opts.cmdline   = true;
 			opts.console   = true;
-			opts.stats     = true;
+			opts.layerstats= true;
+			opts.timestats = true;
 			opts.slopemap  = true;
 			opts.heightmap = true;
 			opts.timemap   = true;
-			opts.fluxmap   = true;
+			opts.fluxdump  = true;
 			opts.peaks     = true;
 			opts.layermap  = true;
 			opts.voronei   = true;
@@ -232,11 +237,12 @@ int main(int argc, char **argv){
 		} else if(strcmp(ptr, "-q") == 0 || strcmp(ptr, "--quiet") == 0) {
 			opts.cmdline   = false;
 			opts.console   = false;
-			opts.stats     = false;
+			opts.layerstats= false;
+			opts.timestats = false;
 			opts.slopemap  = false;
 			opts.heightmap = false;
 			opts.timemap   = false;
-			opts.fluxmap   = false;
+			opts.fluxdump  = false;
 			opts.peaks     = false;
 			opts.layermap  = false;
 			opts.voronei   = false;
@@ -245,20 +251,25 @@ int main(int argc, char **argv){
 			opts.datadump  = false;
 			opts.savemem   = false;
 			opts.pockets   = false;
+		} else if(strcmp(ptr, "-S") == 0 || strcmp(ptr, "--stats")){
+			opts.timestats  = true;
+			opts.layerstats = true;
 		} else if(strcmp(ptr, "--cmdline") == 0) {
 			opts.cmdline = true;
 		} else if(strcmp(ptr, "--console") == 0) {
 			opts.console = true;
-		} else if(strcmp(ptr, "--stats") == 0) {
-			opts.stats = true;
+		} else if(strcmp(ptr, "--layerstats") == 0) {
+			opts.layerstats = true;
+		} else if(strcmp(ptr, "--timestats") == 0) {
+			opts.timestats = true;
 		} else if(strcmp(ptr, "--slopemap") == 0) {
 			opts.slopemap = true;
 		} else if(strcmp(ptr, "--heightmap") == 0) {
 			opts.heightmap = true;
 		} else if(strcmp(ptr, "--timemap") == 0) {
 			opts.timemap = true;
-		} else if(strcmp(ptr, "--fluxmap") == 0) {
-			opts.fluxmap = true;
+		} else if(strcmp(ptr, "--fluxdump") == 0) {
+			opts.fluxdump = true;
 		} else if(strcmp(ptr, "--peaks") == 0) {
 			opts.peaks = true;
 		} else if(strcmp(ptr, "--layermap") == 0) {
@@ -367,7 +378,7 @@ int main(int argc, char **argv){
 	}
 
 	if(opts.cmdline){
-		FILE *fd = fopen("cmdline", "w");
+		FILE *fd = fopen("cmdline.txt", "w");
 		for(int i = 0; i < argc; i++)
 			fprintf(fd, "%s ", argv[i]);
 		fprintf(fd, "\n");

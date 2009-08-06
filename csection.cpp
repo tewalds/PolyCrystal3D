@@ -70,24 +70,24 @@ int main(int argc, char **argv){
 		gdImageFill(im, 0, 0, gdImageColorAllocate(im, 0, 0, 0));
 
 		for(int h = 0; h < height; h++){
-			sprintf(filename, "level.%05d.png", h);
+			sprintf(filename, "layer.%05d.png", h);
 			fd = fopen(filename, "rb");
 			if(fd == NULL)
 				break;
-			gdImagePtr levelim = gdImageCreateFromPng(fd);
+			gdImagePtr layerim = gdImageCreateFromPng(fd);
 			fclose(fd);
 
-			if(gdImageSX(levelim) != size || gdImageSY(levelim) != size){
+			if(gdImageSX(layerim) != size || gdImageSY(layerim) != size){
 				printf("File %s is not the expected size\n", filename);
 				exit(1);
 			}
 
-			gdImageCopy(im, levelim, 0, height - h - 1, 0, y, size, 1); //copy one line into place
+			gdImageCopy(im, layerim, 0, height - h - 1, 0, y, size, 1); //copy one line into place
 
-			gdImageDestroy(levelim);
+			gdImageDestroy(layerim);
 		}
 
-		sprintf(filename, "crosssection.%05d.png", y);
+		sprintf(filename, "csection.%05d.png", y);
 		fd = fopen(filename, "wb");
 		gdImagePng(im, fd);
 		fclose(fd);

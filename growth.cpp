@@ -142,12 +142,13 @@ public:
 
 		FILE *fd = NULL;
 
-		if(opts.stats){
-			fd = fopen("levelstats", "w");
-			fprintf(fd, "level,num grains,mean area,porousity\n");
+		if(opts.layerstats){
+			fd = fopen("layerstats.csv", "w");
+			fprintf(fd, "layer,num grains,mean area,porousity\n");
 			fclose(fd);
-
-			fd = fopen("timestats", "w");
+		}
+		if(opts.timestats){
+			fd = fopen("timestats.csv", "w");
 			fprintf(fd, "time,num grains,mean height,rms roughness\n");
 			fclose(fd);
 		}
@@ -157,8 +158,11 @@ public:
 		
 		double min_space_squared = min_space*min_space;
 
-		if(load)
-			fd = fopen("graininit", "r");
+		if(load){
+			fd = fopen("grains.csv", "r");
+			char buf[100];
+			if(fgets(buf, 99, fd)); //ignore the header
+		}
 
 	//generate initial grain information
 	//grain number 0 is special as non-existent
@@ -199,7 +203,8 @@ public:
 			fclose(fd);
 
 		if(!load && opts.graininit){
-			fd = fopen("graininit", "w");
+			fd = fopen("grains.csv", "w");
+			fprintf(fd, "grain,x,y,theta1,theta2,phi\n");
 			for(int i = 1; i <= num_grains; i++)
 				grains[i].dump(fd, i);
 			fclose(fd);
@@ -241,7 +246,7 @@ public:
 				}
 			}
 
-			if(opts.fluxmap)
+			if(opts.fluxdump)
 				grid->resetflux();
 
 			int growth = 0;
@@ -352,7 +357,7 @@ public:
 
 	void growthstats(int t){
 		char filename[50];
-		sprintf(filename, "growth.%05d", t);
+		sprintf(filename, "growth.%05d.csv", t);
 		FILE * fd = fopen(filename, "w");
 
 		fprintf(fd, "grain,face,A,B,C,D,F,dF,flux,threats\n");
@@ -471,7 +476,7 @@ public:
 			
 			int grain = grid->get_grain(c.x, c.y, c.z);
 
-			if(opts.fluxmap)
+			if(opts.fluxdump)
 				grid->incrflux(c.x, c.y);
 			
 			if(grain == THREAT){

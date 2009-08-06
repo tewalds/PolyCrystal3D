@@ -163,7 +163,7 @@ int main(int argc, char **argv){
 				"\t   --peaks      Output a peaks  list for each timestep to peaks.%%05d.csv  - off\n"
 				"\t   --graininit  Output initial grain placements        to grains.csv      - off\n"
 				"\t   --voronei    Output a voronei map of initial grains to voronei.png     - off\n"
-				"\t   --pockets    Mark pockets in datadump, saving memory with --savemem    - off\n"
+				"\t   --pockets    Mark pockets in datadump, saves memory with --savemem     - off\n"
 				"\t   --savemem    Dump the data to disk (temporarily) to save memory        - off\n"
 				"\t   --randcolor  Use random grain coloring, not directional coloring       - off\n"
 				"\t   --dataformat Output a description of the binary format\n"

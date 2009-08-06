@@ -140,7 +140,7 @@ public:
 		echo("Initializing %d grains of shape %s, to be run %d times in %.2f increments ... ", num_grains, shape.name, num_steps, growth_factor);
 		fflush(stdout);
 
-		FILE *fd = NULL;
+		FILE * fd = NULL;
 
 		if(opts.layerstats){
 			fd = fopen("layerstats.csv", "w");

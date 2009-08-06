@@ -249,10 +249,8 @@ struct Plane {
 
 	bool load(int layer){
 		char filename[50];
-		FILE * fd;
-
 		sprintf(filename, "data.%05d.dat", layer);
-		fd = fopen(filename, "rb");
+		FILE * fd = fopen(filename, "rb");
 
 		if(!fd)
 			return false;

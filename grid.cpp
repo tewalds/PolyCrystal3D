@@ -1,4 +1,7 @@
 
+#include "coord.h"
+#include "ray.h"
+#include "color.h"
 
 #define FULLPOINT (0xFFFF) //internal value to mean this point was dropped to disk
 #define THREAT    (0xFFFE) //this point is threatened by other points, but is empty
@@ -7,35 +10,12 @@
 #define MARK      (0xFFFB) //marks a threat for the mark/sweep pocket search
 #define MAXGRAIN  (0xFFF0) //max amount of grains, anything above is reserved for special values
 
-int periodic_dist_sq(int x1, int y1, int x2, int y2){
-	int dx = abs(x1 - x2);
-	int dy = abs(y1 - y2);
-	
-	if(dx > FIELD/2)
-		dx = abs(dx - FIELD);
-	if(dy > FIELD/2)
-		dy = abs(dy - FIELD);
-
-	return dx*dx + dy*dy;
-}
 
 struct Threat {
 	uint16_t grain;
 	uint8_t  face;
 };
 
-struct Coord {
-	int x, y, z;
-	
-	Coord(){
-		x = y = z = 0;
-	}
-	Coord(int X, int Y, int Z){
-		x = X;
-		y = Y;
-		z = Z;
-	}
-};
 
 struct Point {
 	uint16_t time;  // time it was taken
@@ -376,7 +356,7 @@ public:
 	}
 
 	void peaks(int t, int maxgraincount){
-		vector<Coord> peaks(maxgraincount);
+		vector<Coord3i> peaks(maxgraincount);
 	
 		for(int y = 0; y < FIELD; y++){
 			for(int x = 0; x < FIELD; x++){
@@ -394,7 +374,7 @@ public:
 						}
 					}
 					if(peak)
-						peaks[grain] = Coord(x, y, z);
+						peaks[grain] = Coord3i(x, y, z);
 				}
 			}	
 		}
@@ -409,7 +389,7 @@ public:
 		fclose(fd);
 	}
 
-	int graincount(int maxgraincount){
+	int graincount(int maxgraincount) const {
 		vector<int> counts(maxgraincount, 0);
 
 		for(int y = 0; y < FIELD; y++){
@@ -428,7 +408,16 @@ public:
 		return num;
 	}
 
-	void timestats(int t, int maxgraincount){
+	double mean_height() const {
+		uint64_t totalheight = 0;
+		for(int y = 0; y < FIELD; y++)
+			for(int x = 0; x < FIELD; x++)
+				totalheight += heights[y][x];
+
+		return (double)totalheight/(FIELD*FIELD);
+	}
+
+	void timestats(int t, int maxgraincount) const {
 /*
 - number of surface grains (count of grains in height map)
 - mean height (average max z)
@@ -436,13 +425,7 @@ public:
 */
 
 		int num = graincount(maxgraincount);
-
-		uint64_t totalheight = 0;
-		for(int y = 0; y < FIELD; y++)
-			for(int x = 0; x < FIELD; x++)
-				totalheight += heights[y][x];
-
-		double mean = (double)totalheight/(FIELD*FIELD);
+		double mean = mean_height();
 		
 		double totalms = 0;
 		for(int y = 0; y < FIELD; y++)
@@ -491,11 +474,11 @@ public:
 
 	//reset all reachable MARK threats to real THREATs
 	void unmark(int x, int y, int z){
-		queue<Coord> q;
+		queue<Coord3i> q;
 
-		q.push(Coord(x, y, z));
+		q.push(Coord3i(x, y, z));
 
-		Coord c;
+		Coord3i c;
 		while(!q.empty()){
 			c = q.front();
 			q.pop();
@@ -508,22 +491,22 @@ public:
 			if(planes[c.z]->unmark(c.x, c.y)){
 				surfacethreats++;
 
-				q.push(Coord(c.x-1, c.y, c.z));
-				q.push(Coord(c.x+1, c.y, c.z));
-				q.push(Coord(c.x, c.y-1, c.z));
-				q.push(Coord(c.x, c.y+1, c.z));
-				q.push(Coord(c.x, c.y, c.z-1));
-				q.push(Coord(c.x, c.y, c.z+1));
+				q.push(Coord3i(c.x-1, c.y, c.z));
+				q.push(Coord3i(c.x+1, c.y, c.z));
+				q.push(Coord3i(c.x, c.y-1, c.z));
+				q.push(Coord3i(c.x, c.y+1, c.z));
+				q.push(Coord3i(c.x, c.y, c.z-1));
+				q.push(Coord3i(c.x, c.y, c.z+1));
 			}
 		}
 	}
 
 	void sweep_pockets(int x, int y, int z){
-		queue<Coord> q;
+		queue<Coord3i> q;
 
-		q.push(Coord(x, y, z));
+		q.push(Coord3i(x, y, z));
 
-		Coord c;
+		Coord3i c;
 		while(!q.empty()){
 			c = q.front();
 			q.pop();
@@ -546,12 +529,12 @@ public:
 		
 			planes[c.z]->set(c.x, c.y, n);
 		
-			q.push(Coord(c.x-1, c.y, c.z));
-			q.push(Coord(c.x+1, c.y, c.z));
-			q.push(Coord(c.x, c.y-1, c.z));
-			q.push(Coord(c.x, c.y+1, c.z));
-			q.push(Coord(c.x, c.y, c.z-1));
-			q.push(Coord(c.x, c.y, c.z+1));
+			q.push(Coord3i(c.x-1, c.y, c.z));
+			q.push(Coord3i(c.x+1, c.y, c.z));
+			q.push(Coord3i(c.x, c.y-1, c.z));
+			q.push(Coord3i(c.x, c.y+1, c.z));
+			q.push(Coord3i(c.x, c.y, c.z-1));
+			q.push(Coord3i(c.x, c.y, c.z+1));
 		}
 	}
 

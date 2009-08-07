@@ -1,4 +1,6 @@
 
+#include "coord.h"
+#include "ray.h"
 #include "tqueue.h"
 
 double unitrand(){
@@ -28,33 +30,6 @@ struct Request {
 		c = C;
 	}
 };
-
-struct Ray {
-	double x, y, z;
-	double a, b, c;
-
-	int round(double v){
-//		return lroundl(v);
-		return v;
-	}
-
-	bool incr(int zmin){
-		z += c;
-
-		if(round(z) < zmin){
-			z -= c;
-			return false;
-		}
-
-		x += a;
-		y += b;
-		return true;
-	}
-	int X(){ return round(x); }
-	int Y(){ return round(y); }
-	int Z(){ return round(z); }
-};
-
 
 class Growth {
 public:
@@ -472,7 +447,7 @@ public:
 			ray.b = sin(phi)*sintheta;
 			ray.c = -costheta;
 
-			Coord c = raytrace(ray); //trace the ray until it hits a threat or the substrate
+			Coord3i c = raytrace(ray); //trace the ray until it hits a threat or the substrate
 			
 			int grain = grid->get_grain(c.x, c.y, c.z);
 
@@ -497,13 +472,13 @@ public:
 		}
 	}
 
-	Coord raytrace(Ray ray){
+	Coord3i raytrace(Ray ray){
 		while(ray.incr(grid->zmin) && grid->get_grain(ray.X(), ray.Y(), ray.Z()) != THREAT); //empty body
 
-		return Coord(ray.X(), ray.Y(), ray.Z());
+		return Coord3i(ray.X(), ray.Y(), ray.Z());
 	}
 
-	Coord substrate_random_walk(int x, int y){	
+	Coord3i substrate_random_walk(int x, int y){
 		do{
 			switch(rand() % 4){
 				case 0: x++; break;
@@ -513,10 +488,10 @@ public:
 			}
 		}while(grid->get_grain(x, y, 0) != THREAT);
 
-		return Coord(x, y, 0);
+		return Coord3i(x, y, 0);
 	}
 
-	Coord face_random_walk(int x, int y, int z){
+	Coord3i face_random_walk(int x, int y, int z){
 		Point * p = grid->get_point(x, y, z);
 
 		while((rand() % 256) < p->diffprob){
@@ -548,12 +523,12 @@ retry: //used to retry on when the random choice below is invalid, without re-ch
 			}
 		}
 
-		return Coord(x, y, z);
+		return Coord3i(x, y, z);
 	}
 
 /*
 //face walk that tries to be faster and more fair than the random walk
-	Coord face_walk(int x, int y, int z){
+	Coord3i face_walk(int x, int y, int z){
 		//choose length to travel
 		double length = 1.0; //fix to be the correct random distribution later
 
@@ -586,7 +561,7 @@ retry: //used to retry on when the random choice below is invalid, without re-ch
 				//set the new direction
 		}
 
-		return Coord(x, y, z);
+		return Coord3i(x, y, z);
 	}
 */
 };

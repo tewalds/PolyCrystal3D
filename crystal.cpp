@@ -83,7 +83,6 @@ void interrupt(int sig){
 	opts.interrupt = true;
 }
 
-#include "color.h"
 #include "shapes.h"
 #include "grain.cpp"
 #include "grid.cpp"

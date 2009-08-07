@@ -1,4 +1,7 @@
 
+#ifndef _COLOR_H_
+#define _COLOR_H_
+
 struct HSV;
 
 struct RGB {
@@ -127,4 +130,6 @@ HSV::HSV(RGB rgb){
 		h = 240.0/360.0 + 60.0/360.0*(r - g);
 	}
 }
+
+#endif
 

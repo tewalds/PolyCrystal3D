@@ -1,4 +1,6 @@
 
+#include "color.h"
+
 struct FaceDist {
 	int face;
 	double dist;

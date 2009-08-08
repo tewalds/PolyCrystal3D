@@ -2,7 +2,7 @@
 #include "atomic.h"
 #include "coord.h"
 #include "ray.h"
-#include "tqueue.h"
+#include "worker.h"
 
 double unitrand(){
 	return (double)rand()/RAND_MAX;
@@ -14,25 +14,49 @@ int time_msec(){
 	return (time.tv_sec*1000 + time.tv_usec/1000);
 }
 
-enum ReqType {
-	RT_COUNT_THREATS,
-	RT_ADDFLUX,
-	RT_THREAT_POINTS
-};
-
-struct Request {
-	ReqType type;
-	int a, b, c;
-
-	Request(ReqType T, int A = 0, int B = 0, int C = 0){
-		type = T;
-		a = A;
-		b = B;
-		c = C;
-	}
-};
-
 class Growth {
+	struct CountThreatsReq : WorkRequest {
+		Growth * g;
+		int z;
+		CountThreatsReq(Growth * G, int Z){
+			g = G;
+			z = Z;
+		}
+		int64_t run(){
+			g->count_threats(z);
+			return 0;
+		}
+	};
+
+	struct AddFluxReq : WorkRequest {
+		Growth * g;
+		int z;
+		AddFluxReq(Growth * G, int Z){
+			g = G;
+			z = Z;
+		}
+		int64_t run(){
+			g->addflux(z);
+			return 0;
+		}
+	};
+
+	struct RunLayerReq : WorkRequest {
+		Growth * g;
+		int z, t;
+		bool n;
+		RunLayerReq(Growth * G, int Z, int T, bool N){
+			g = G;
+			z = Z;
+			t = T;
+			n = N;
+		}
+		int64_t run(){
+			return g->run_layer(z, t, n);
+		}
+	};
+
+
 public:
 
 	int num_steps;
@@ -52,10 +76,8 @@ public:
 	vector<Grain> grains;
 	Grid * grid;
 
-	tqueue<Request> request;
-	tqueue<int> response;
+	Worker * worker;
 	int num_threads;
-	pthread_t thread[MAX_THREADS];
 
 	Growth(int threads){
 		max_memory = 0;
@@ -79,35 +101,12 @@ public:
 		//define a blank grain
 		grains.push_back(Grain());
 
-		//start the threads
-		if(num_threads > 1)
-			for(int i = 0; i < num_threads; i++)
-				pthread_create(&(thread[i]), NULL, (void* (*)(void*)) threadRunner, this);
+		worker = new Worker(num_threads);
 	}
 
-	static void * threadRunner(void * blah){
-		Growth * g = (Growth *) blah;
-        while(1){
-                Request *req = g->request.pop();
-                
-                int ret = 0;
-
-                switch(req->type){
-                	case RT_COUNT_THREATS:
-                		g->count_threats(req->a);
-                		break;
-					case RT_ADDFLUX:
-						g->addflux(req->a);
-						break;
-					case RT_THREAT_POINTS:
-						ret = g->run_layer(req->a, req->b, req->c);
-						break;
-				}
-				g->response.push((int *)ret);
-
-				delete req;
-        }
-        return NULL;
+	~Growth(){
+		delete grid;
+		delete worker;
 	}
 
 	void init(int num_grains, double min_space, Shape & shape, bool load){
@@ -234,26 +233,17 @@ public:
 				for(unsigned int i = 0; i < grains.size(); i++)
 					grains[i].grow_faces(growth_factor);
 			}else{
-				if(num_threads > 1){
-				//count threats
-					for(int z = grid->zmin; z < grid->zmax; z++)
-						request.push(new Request(RT_COUNT_THREATS, z));
+				for(int z = grid->zmin; z < grid->zmax; z++)
+					worker->add(new CountThreatsReq(this, z));
 
-					for(int z = grid->zmin; z < grid->zmax; z++)
-						response.pop();
+				worker->wait();
 
-				//ray trace
-					for(int i = 0; i < num_threads*10; i++)
-						request.push(new Request(RT_ADDFLUX, raycount/(num_threads*10)));
-
-					for(int i = 0; i < num_threads*10; i++)
-						response.pop();
-				}else{
-					for(int z = grid->zmin; z < grid->zmax; z++)
-						count_threats(z);
-
-					addflux(raycount);
+				while(raycount > 0){
+					worker->add(new AddFluxReq(this, min(raycount, 1000)));
+					raycount -= 1000;
 				}
+
+				worker->wait();
 
 			//add flux
 				for(unsigned int i = 0; i < grains.size(); i++){
@@ -276,17 +266,11 @@ public:
 			int count = 0;
 			bool mem = true;
 			do{
-				thisgrowth = 0;
-				if(num_threads > 1){
-					for(int z = grid->zmin; z < grid->zmax; z++)
-						request.push(new Request(RT_THREAT_POINTS, z, t, count));
+				for(int z = grid->zmin; z < grid->zmax; z++)
+					worker->add(new RunLayerReq(this, z, t, count));
 
-					for(int z = grid->zmin; z < grid->zmax; z++)
-						thisgrowth += (uint64_t)response.pop();
-				}else{
-					for(int z = grid->zmin; z < grid->zmax; z++)
-						thisgrowth += run_layer(z, t, count);
-				}
+				thisgrowth = worker->wait();
+
 				mem = grid->growgrid();
 
 				growth += thisgrowth;

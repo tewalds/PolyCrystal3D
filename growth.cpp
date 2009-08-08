@@ -1,4 +1,5 @@
 
+#include "atomic.h"
 #include "coord.h"
 #include "ray.h"
 #include "tqueue.h"
@@ -230,8 +231,6 @@ public:
 
 			//grow the grains
 			if(ray_step == 0 || t <= ray_step){
-//			if(grid->zmin == 0){
-//			if(true){
 				for(unsigned int i = 0; i < grains.size(); i++)
 					grains[i].grow_faces(growth_factor);
 			}else{

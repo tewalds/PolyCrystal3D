@@ -26,16 +26,6 @@ using namespace std;
 #define MAX_THREADS 100 //slight speed improvement by setting to 1
 #endif
 
-#if MAX_THREADS > 1
-#define CASv(var, old, new) __sync_bool_compare_and_swap(&(var), old, new)
-#define CASp(ptr, old, new) __sync_bool_compare_and_swap(ptr, old, new)
-#define INCR(var) __sync_add_and_fetch(&(var), 1)
-#else
-#define CASv(var, old, new) if((var) == (old)) { (var) = (new); }
-#define CASp(ptr, old, new) if(*(ptr) == (old)) { *(ptr) = (new); }
-#define INCR(var) (++(var))
-#endif
-
 struct Options {
 	bool cmdline;   // output the command line that was used
 	bool console;   // output the console output to a file too

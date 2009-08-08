@@ -1,4 +1,5 @@
 
+#include "atomic.h"
 #include "coord.h"
 #include "ray.h"
 #include "color.h"

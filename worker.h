@@ -16,22 +16,22 @@ class Worker {
 
 	int req_count;
 	int res_count;
-	
+
 	bool running;
 
 public:
 	Worker(int num){
 		num_threads = num;
 		running = true;
-		
+
 		req_count = 0;
 		res_count = 0;
-		
+
 		if(num_threads > 1)
 			for(int i = 0; i < num_threads; i++)
 				pthread_create(&(thread[i]), NULL, (void* (*)(void*)) threadRunner, this);
 	}
-	
+
 	~Worker(){
 		running = false;
 		request.nonblock();
@@ -41,13 +41,13 @@ public:
 				pthread_join(thread[i], NULL);
 	}
 
-
 	static void * threadRunner(void * blah){
 		Worker * w = (Worker *) blah;
-		while(w->running){
-			WorkRequest * req = w->request.pop();
-
-			int64_t * ret = new int64_t;
+		WorkRequest * req;
+		int64_t * ret;
+		
+		while(w->running && (req = w->request.pop())){
+			ret = new int64_t;
 
 			*ret = req->run();
 
@@ -64,7 +64,7 @@ public:
 	}
 
 	int64_t wait(){
-		int64_t ret = 0;	
+		int64_t ret = 0;
 
 		if(num_threads > 1){
 			while(res_count < req_count){

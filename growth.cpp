@@ -4,6 +4,8 @@
 #include "ray.h"
 #include "worker.h"
 
+#include "stats.h"
+
 double unitrand(){
 	return (double)rand()/RAND_MAX;
 }
@@ -18,10 +20,7 @@ class Growth {
 	struct CountThreatsReq : WorkRequest {
 		Growth * g;
 		int z;
-		CountThreatsReq(Growth * G, int Z){
-			g = G;
-			z = Z;
-		}
+		CountThreatsReq(Growth * G, int Z) : g(G), z(Z) { }
 		int64_t run(){
 			g->count_threats(z);
 			return 0;
@@ -31,10 +30,7 @@ class Growth {
 	struct AddFluxReq : WorkRequest {
 		Growth * g;
 		int z;
-		AddFluxReq(Growth * G, int Z){
-			g = G;
-			z = Z;
-		}
+		AddFluxReq(Growth * G, int Z) : g(G), z(Z) { }
 		int64_t run(){
 			g->addflux(z);
 			return 0;
@@ -45,12 +41,7 @@ class Growth {
 		Growth * g;
 		int z, t;
 		bool n;
-		RunLayerReq(Growth * G, int Z, int T, bool N){
-			g = G;
-			z = Z;
-			t = T;
-			n = N;
-		}
+		RunLayerReq(Growth * G, int Z, int T, bool N) : g(G), z(Z), t(T), n(N) { }
 		int64_t run(){
 			return g->run_layer(z, t, n);
 		}
@@ -128,7 +119,7 @@ public:
 			fclose(fd);
 		}
 
-		grid->output(0, grains);
+		Stats::timestats(0, grid, grains);
 		grid->cleangrid(0, grains);
 		
 		double min_space_squared = min_space*min_space;
@@ -188,10 +179,10 @@ public:
 		if(opts.voronei){
 			echo("Finding closest grains ... ");
 			fflush(stdout);
-			grid->voroneimap(grains);
+			Stats::voroneimap(grains);
 		}
 
-		grid->output(1, grains);
+		Stats::timestats(1, grid, grains);
 		grid->cleangrid(1, grains);
 
 		echo("done in %d msec\n", time_msec() - starttime);
@@ -285,10 +276,8 @@ public:
 			starttime = time_msec();
 
 			//output and finished data and images
+			Stats::timestats(worker, t, grid, grains);
 			grid->cleangrid(t, grains);
-			grid->output(t, grains);
-			if(opts.growth)
-				growthstats(t);
 
 			echo("output in %d msec\n", time_msec() - starttime);
 
@@ -311,23 +300,6 @@ public:
 
 		grid->dump(grains);
 		echo("Finished in %d sec\n", (time_msec() - start)/1000);
-	}
-
-	void growthstats(int t){
-		char filename[50];
-		sprintf(filename, "growth.%05d.csv", t);
-		FILE * fd = fopen(filename, "w");
-
-		fprintf(fd, "grain,face,A,B,C,D,F,dF,flux,threats\n");
-
-		for(unsigned int i = 0; i < grains.size(); i++){
-			for(unsigned int j = 0; j < grains[i].faces.size(); j++){
-				fprintf(fd, "%d,%d,", i, j);
-				grains[i].faces[j].dump(fd);
-			}
-		}
-
-		fclose(fd);
 	}
 
 	void count_threats(int z){

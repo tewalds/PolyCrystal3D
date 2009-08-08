@@ -22,10 +22,6 @@ struct Stats {
 	};
 
 	static void timestats(Worker * worker, int t, Grid * grid, const vector<Grain> & grains){
-		if(opts.growth)
-			worker->add(new TimeStatsReq(growth,     t, grid, grains));
-		if(opts.fluxdump)
-			worker->add(new TimeStatsReq(fluxdump,   t, grid, grains));
 		if(opts.slopemap)
 			worker->add(new TimeStatsReq(slopemap,   t, grid, grains));
 		if(opts.heightmap)
@@ -34,14 +30,17 @@ struct Stats {
 			worker->add(new TimeStatsReq(heightdump, t, grid, grains));
 		if(opts.timemap)
 			worker->add(new TimeStatsReq(timemap,    t, grid, grains));
-		if(opts.timestats)
-			worker->add(new TimeStatsReq(timestats,  t, grid, grains));
+		if(opts.fluxdump)
+			worker->add(new TimeStatsReq(fluxdump,   t, grid, grains));
 		if(opts.peaks)
 			worker->add(new TimeStatsReq(peaks,      t, grid, grains));
+		if(opts.growth)
+			worker->add(new TimeStatsReq(growth,     t, grid, grains));
+		if(opts.timestats)
+			worker->add(new TimeStatsReq(timestats,  t, grid, grains));
 
 		worker->wait();	
 	}
-
 
 	static void growth(int t, Grid * grid, const vector<Grain> & grains) {
 		char filename[50];

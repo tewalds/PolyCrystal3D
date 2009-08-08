@@ -20,10 +20,6 @@ struct Stats {
 			return 0;
 		}
 	};
-	
-	struct LayerStatsReq {
-	
-	};
 
 	static void timestats(Worker * worker, int t, Grid * grid, const vector<Grain> & grains){
 		if(opts.growth)
@@ -66,7 +62,7 @@ struct Stats {
 
 	static void peaks(int t, Grid * grid, const vector<Grain> & grains) {
 		vector<Coord3i> peaks(grains.size());
-	
+
 		for(int y = 0; y < FIELD; y++){
 			for(int x = 0; x < FIELD; x++){
 				int z = grid->heights[y][x];
@@ -85,7 +81,7 @@ struct Stats {
 					if(peak)
 						peaks[grain] = Coord3i(x, y, z);
 				}
-			}	
+			}
 		}
 
 		char filename[50];
@@ -126,7 +122,7 @@ struct Stats {
 		char filename[50];
 		sprintf(filename, "flux.%05d.dat", t);
 		FILE * fd = fopen(filename, "wb");
-		
+
 		for(int y = 0; y < FIELD; y++)
 			if(fwrite(grid->flux[y], sizeof(uint8_t), FIELD, fd));
 

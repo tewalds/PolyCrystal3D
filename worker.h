@@ -45,7 +45,7 @@ public:
 		Worker * w = (Worker *) blah;
 		WorkRequest * req;
 		int64_t * ret;
-		
+
 		while(w->running && (req = w->request.pop())){
 			ret = new int64_t;
 

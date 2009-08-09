@@ -388,9 +388,9 @@ public:
 
 		for(int i = 0; i < num; i++){
 			Ray ray;
-			ray.x = unitrand() * FIELD;
-			ray.y = unitrand() * FIELD;
-			ray.z = grid->zmax-1;
+			ray.loc.x = unitrand() * FIELD;
+			ray.loc.y = unitrand() * FIELD;
+			ray.loc.z = grid->zmax-1;
 
 			do{
 				costheta = pow(unitrand(), raypow);
@@ -398,9 +398,9 @@ public:
 			sintheta = sqrt(1 - costheta*costheta);
 			phi = unitrand()*2*M_PI;
 
-			ray.a = cos(phi)*sintheta;
-			ray.b = sin(phi)*sintheta;
-			ray.c = -costheta;
+			ray.dir.x = cos(phi)*sintheta;
+			ray.dir.y = sin(phi)*sintheta;
+			ray.dir.z = -costheta;
 
 			Coord3i c = raytrace(ray); //trace the ray until it hits a threat or the substrate
 			
@@ -428,9 +428,9 @@ public:
 	}
 
 	Coord3i raytrace(Ray ray){
-		while(ray.incr(grid->zmin) && grid->get_grain(ray.X(), ray.Y(), ray.Z()) != THREAT); //empty body
+		while(ray.incr(grid->zmin) && grid->get_grain(ray.loc) != THREAT); //empty body
 
-		return Coord3i(ray.X(), ray.Y(), ray.Z());
+		return Coord3i(ray.loc);
 	}
 
 	Coord3i substrate_random_walk(int x, int y){

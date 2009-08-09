@@ -1,5 +1,6 @@
 
 #include "color.h"
+#include "coord.h"
 
 struct FaceDist {
 	int face;
@@ -15,9 +16,7 @@ struct FaceDist {
 };
 
 struct Face {
-	double A;
-	double B;
-	double C;
+	Coord3f vec;
 	double D;  // speed of growth
 	double F;  // flux
 	double dF; // amount of flux received last timestep
@@ -31,9 +30,9 @@ struct Face {
 	RGB rgb;
 
 	Face(double a, double b, double c, double d, double f, double p){
-		A = a;
-		B = b;
-		C = c;
+		vec.x = a;
+		vec.y = b;
+		vec.z = c;
 		D = d;
 		F = f;
 		dF = 0;
@@ -45,17 +44,17 @@ struct Face {
 	}
 
 	void output() const {
-		printf("\t%.3f*x + %.3f*y + %.3f*z + %.3f*f = 0, f = %.3f, K = %.3f\n", A, B, C, D, F, K);
+		printf("\t%.3f*x + %.3f*y + %.3f*z + %.3f*f = 0, f = %.3f, K = %.3f\n", vec.x, vec.y, vec.z, D, F, K);
 	}
 
 	void dump(FILE * fd) const {
-		fprintf(fd, "%.10f,%.10f,%.10f,%.10f,%.10f,%.10f,%d,%d\n", A, B, C, D, F, dF, flux, threats);
+		fprintf(fd, "%.10f,%.10f,%.10f,%.10f,%.10f,%.10f,%d,%d\n", vec.x, vec.y, vec.z, D, F, dF, flux, threats);
 	}
 
 	double fluxamnt(){
 		double amnt = 0;
 		if(flux && threats)
-			amnt = (fabs(A) + fabs(B) + fabs(C)) * flux / threats;
+			amnt = (fabs(vec.x) + fabs(vec.y) + fabs(vec.z)) * flux / threats;
 
 		return amnt;
 	}
@@ -68,41 +67,28 @@ struct Face {
 	}
 
 	void calc_color(double color){
-		double slope = atan(A/C)*2/M_PI;
+		double slope = atan(vec.x/vec.z)*2/M_PI;
 		if(slope < 0) rgb = RGB(HSV(color, slope + 1.0, 1.0));
 		else          rgb = RGB(HSV(color, 1.0, 1.0 - slope));
 	}
 	
 	void rotate(double t1, double t2, double phi){
-		double a, b, c;
-		
-		a = cos(t1)*A + sin(t1)*B;
-		b = -sin(t1)*A + cos(t1)*B;
-		
-		A = a; B = b;
-		
-		b = cos(phi)*B + sin(phi)*C;
-		c = -sin(phi)*B + cos(phi)*C;
-		
-		B = b; C = c;
-		
-		a = cos(t2)*A + sin(t2)*B;
-		b = -sin(t2)*A + cos(t2)*B;
-		
-		A = a; B = b;
+		vec.rotz(t1);
+		vec.rotx(phi);
+		vec.rotz(t2);
 	}
 	
 	bool under(int x, int y, int z) const {
-		return (A*x + B*y + C*z < K);
+		return (vec.x*x + vec.y*y + vec.z*z < K);
 	}
 	
 	double rel_dist(int x, int y, int z) const {
-		double f = (A*x + B*y + C*z)/D;
+		double f = (vec.x*x + vec.y*y + vec.z*z)/D;
 		return (f - (F - dF))/dF;
 	}
 
 	double abs_dist(int x, int y, int z) const {
-		return K - (A*x + B*y + C*z);
+		return K - (vec.x*x + vec.y*y + vec.z*z);
 	}
 };
 

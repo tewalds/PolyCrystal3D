@@ -252,55 +252,40 @@ struct Stats {
 	}
 
 	static void isomorphic(int t, Grid * grid, const vector<Grain> & grains) {
-		gdImagePtr im = gdImageCreateTrueColor(FIELD, FIELD);
+
+		const int width = FIELD*1.5;
+		const int height= FIELD;
+
+		gdImagePtr im = gdImageCreateTrueColor(width, height);
 		gdImageFill(im, 0, 0, gdImageColorAllocate(im, 0, 0, 0));
 
-//		double spread = 45.0 * M_PI/180.0;
 		int dist = FIELD;
 		int h = grid->mean_height();
 
 
-		Coord3f shiftx = Coord3f(1,-1, 0);
-		Coord3f shifty = Coord3f(1, 1, 2);
+		Coord3f shiftx = Coord3f(-1, 1, 0);
+		Coord3f shifty = Coord3f(-1,-1,-2);
 
 		shiftx.scale();
 		shifty.scale();
 
 		Ray init;
-
-		init.x = FIELD/2 - dist;
-		init.y = FIELD/2 - dist;
-		init.z = h + dist;
-
-		init.a = 1;
-		init.b = 1;
-		init.c = -1;
-
+		init.dir = Coord3f(1, 1, -1);
+		init.loc = Coord3f(FIELD/2, FIELD/2, h) - init.dir * dist;
 		init.scale();
 
-		for(int y = 0; y < FIELD; y++){
-			for(int x = 0; x < FIELD; x++){
+		Coord3f light = init.loc;
+
+		for(int y = 0; y < height; y++){
+			for(int x = 0; x < width; x++){
 				Ray ray = init;
-/*
-				ray.a = 1;
-				ray.b = 0;
-				ray.c = 0;
 
-				//generate angles centered around 0 with a total of the spread, then shifted to point in the right direction
-				ray.roty( -(((((double)y/FIELD - 0.5)*spread) + 45.0 * M_PI/180.0)));
-				ray.rotz( -(((((double)x/FIELD - 0.5)*spread) + 45.0 * M_PI/180.0)));
-
-//printf("%f, %f, %f\n", ray.a, ray.b, ray.c);
-/*/
-				ray.x += shiftx.x * (x - FIELD/2) + shifty.x * (y - FIELD/2);
-				ray.y += shiftx.y * (x - FIELD/2) + shifty.y * (y - FIELD/2);
-				ray.z += shiftx.z * (x - FIELD/2) + shifty.z * (y - FIELD/2);
-//*/
+				ray.loc += shiftx * (x - width/2) + shifty * (y - height/2);
 
 				bool next = false;
 				while(1){
 					ray.incr();
-					Coord3i c = ray.loc();
+					Coord3i c = ray.loc;
 
 					if(c.x >= FIELD || c.y >= FIELD || c.z < grid->zmin) //outside the boundaries
 						break;

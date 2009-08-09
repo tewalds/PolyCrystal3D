@@ -559,11 +559,23 @@ public:
 		y = (y + 256*FIELD) % FIELD;
 	}
 
+	Point * get_point(Coord3i & c) const {
+		return get_point(c.x, c.y, c.z);
+	}
+	Point * get_point(Coord3f & c) const {
+		return get_point(c.x, c.y, c.z);
+	}
 	Point * get_point(int x, int y, int z) const {
 		fix_period(x, y);
 		return planes[z]->get(x, y);
 	}
 
+	uint16_t get_grain(Coord3i & c) const {
+		return get_grain(c.x, c.y, c.z);
+	}
+	uint16_t get_grain(Coord3f & c) const {
+		return get_grain(c.x, c.y, c.z);
+	}
 	uint16_t get_grain(int x, int y, int z) const {
 		return get_point(x, y, z)->grain;
 	}

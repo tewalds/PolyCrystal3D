@@ -3,67 +3,50 @@
 #define _RAY_H_
 
 struct Ray {
-	double x, y, z;
-	double a, b, c;
+	Coord3f loc, dir;
 
-	Coord3i loc(){
-		return Coord3i(X(), Y(), Z());
+	Ray(){ }
+	Ray(Coord3f l, Coord3f d){
+		loc = l;
+		dir = d;
 	}
 
 	void scale(){
-		double factor = sqrt(a*a + b*b + c*c);
-		a /= factor;
-		b /= factor;
-		c /= factor;
+		dir.scale();
 	}
 
 	void rotx(double t){
-		double B, C;
-		B = cos(t)*b + sin(t)*c;
-		C = -sin(t)*b + cos(t)*c;
-		b = B; c = C;
+		dir.rotx(t);
 	}
 
 	void roty(double t){
-		double A, C;
-		A = cos(t)*a - sin(t)*c;
-		C = sin(t)*a + cos(t)*c;
-		a = A; c = C;
+		dir.roty(t);
 	}
 
 	void rotz(double t){
-		double A, B;
-		A = cos(t)*a + sin(t)*b;
-		B = -sin(t)*a + cos(t)*b;
-		a = A; b = B;
-	}
-
-	int round(double v){
-//		return lroundl(v);
-		return v;
+		rotz(t);
 	}
 
 	void incr(){
-		x += a;
-		y += b;
-		z += c;
+		loc += dir;
+	}
+
+	void decr(){
+		loc -= dir;
 	}
 
 	bool incr(int zmin){
-		z += c;
+		loc.z += dir.z;
 
-		if(round(z) < zmin){
-			z -= c;
+		if(loc.z < zmin){
+			loc.z -= dir.z;
 			return false;
 		}
 
-		x += a;
-		y += b;
+		loc.x += dir.x;
+		loc.y += dir.y;
 		return true;
 	}
-	int X(){ return round(x); }
-	int Y(){ return round(y); }
-	int Z(){ return round(z); }
 };
 
 #endif

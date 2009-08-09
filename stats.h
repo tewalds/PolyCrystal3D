@@ -301,6 +301,7 @@ struct Stats {
 							RGB rgb = grains[p->grain].get_face_color(p->face);
 							int color = gdImageColorAllocate(im, rgb.r, rgb.g, rgb.b);
 							gdImageSetPixel(im, x, y, color);
+							break;
 						}
 					}
 				}

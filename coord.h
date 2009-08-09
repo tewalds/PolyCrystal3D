@@ -61,6 +61,12 @@ struct Coord3i {
 		y = Y;
 		z = Z;
 	}
+/*	Coord3i(Coord3f c){
+		x = c.x;
+		y = c.y;
+		z = c.z;
+	}
+*/
 };
 
 struct Coord3f {
@@ -73,6 +79,125 @@ struct Coord3f {
 		x = X;
 		y = Y;
 		z = Z;
+	}
+	Coord3f(Coord3i c){
+		x = c.x;
+		y = c.y;
+		z = c.z;
+	}
+
+	Coord3f & operator+=(const Coord3f & rhs) {
+		x += rhs.x;
+		y += rhs.y;
+		z += rhs.z;
+		return *this;
+	}
+
+	Coord3f operator+(const Coord3f & rhs) const {
+		Coord3f tmp = *this;
+		tmp += rhs;
+		return tmp;
+	}
+
+	Coord3f & operator+=(const double rhs) {
+		x += rhs;
+		y += rhs;
+		z += rhs;
+		return *this;
+	}
+
+	Coord3f operator+(const double rhs) const {
+		Coord3f tmp = *this;
+		tmp += rhs;
+		return tmp;
+	}
+
+	Coord3f & operator-=(const Coord3f & rhs) {
+		x -= rhs.x;
+		y -= rhs.y;
+		z -= rhs.z;
+		return *this;
+	}
+
+	Coord3f operator-(const Coord3f & rhs) const {
+		Coord3f tmp = *this;
+		tmp -= rhs;
+		return tmp;
+	}
+
+	Coord3f & operator-=(const double rhs) {
+		x -= rhs;
+		y -= rhs;
+		z -= rhs;
+		return *this;
+	}
+
+	Coord3f operator-(const double rhs) const {
+		Coord3f tmp = *this;
+		tmp -= rhs;
+		return tmp;
+	}
+
+	Coord3f & operator*=(double rhs) {
+		x *= rhs;
+		y *= rhs;
+		z *= rhs;
+		return *this;
+	}
+
+	Coord3f operator*(double rhs) const {
+		Coord3f tmp = *this;
+		tmp *= rhs;
+		return tmp;
+	}
+
+	Coord3f & operator/=(double rhs) {
+		x /= rhs;
+		y /= rhs;
+		z /= rhs;
+		return *this;
+	}
+
+	Coord3f operator/(double rhs) const {
+		Coord3f tmp = *this;
+		tmp /= rhs;
+		return tmp;
+	}
+
+	double len(){
+		return sqrt(x*x + y*y + z*z);
+	}
+
+	void scale(){
+		double factor = len();
+		x /= factor;
+		y /= factor;
+		z /= factor;
+	}
+
+	double dot(Coord3f c){
+		return x*c.x + y*c.y + z*c.z;
+	}
+
+	void rotx(double t){
+		double Y, Z;
+		Y = cos(t)*y + sin(t)*z;
+		Z = -sin(t)*y + cos(t)*z;
+		y = Y; z = Z;
+	}
+
+	void roty(double t){
+		double X, Z;
+		X = cos(t)*x - sin(t)*z;
+		Z = sin(t)*x + cos(t)*z;
+		z = X; z = Z;
+	}
+
+	void rotz(double t){
+		double X, Y;
+		X = cos(t)*x + sin(t)*y;
+		Y = -sin(t)*x + cos(t)*y;
+		x = X; y = Y;
 	}
 };
 

@@ -255,18 +255,33 @@ struct Stats {
 		gdImagePtr im = gdImageCreateTrueColor(FIELD, FIELD);
 		gdImageFill(im, 0, 0, gdImageColorAllocate(im, 0, 0, 0));
 
-		double spread = 45.0 * M_PI/180.0;
+//		double spread = 45.0 * M_PI/180.0;
 		int dist = FIELD;
 		int h = grid->mean_height();
 
+
+		Coord3f shiftx = Coord3f(1,-1, 0);
+		Coord3f shifty = Coord3f(1, 1, 2);
+
+		shiftx.scale();
+		shifty.scale();
+
+		Ray init;
+
+		init.x = FIELD/2 - dist;
+		init.y = FIELD/2 - dist;
+		init.z = h + dist;
+
+		init.a = 1;
+		init.b = 1;
+		init.c = -1;
+
+		init.scale();
+
 		for(int y = 0; y < FIELD; y++){
 			for(int x = 0; x < FIELD; x++){
-				Ray ray;
-
-				ray.x = FIELD/2 - dist;
-				ray.y = FIELD/2 - dist;
-				ray.z = h + dist;
-
+				Ray ray = init;
+/*
 				ray.a = 1;
 				ray.b = 0;
 				ray.c = 0;
@@ -276,7 +291,13 @@ struct Stats {
 				ray.rotz( -(((((double)x/FIELD - 0.5)*spread) + 45.0 * M_PI/180.0)));
 
 //printf("%f, %f, %f\n", ray.a, ray.b, ray.c);
+/*/
+				ray.x += shiftx.x * (x - FIELD/2) + shifty.x * (y - FIELD/2);
+				ray.y += shiftx.y * (x - FIELD/2) + shifty.y * (y - FIELD/2);
+				ray.z += shiftx.z * (x - FIELD/2) + shifty.z * (y - FIELD/2);
+//*/
 
+				bool next = false;
 				while(1){
 					ray.incr();
 					Coord3i c = ray.loc();
@@ -289,7 +310,9 @@ struct Stats {
 //							break;
 
 						Point * p = grid->get_point(c.x, c.y, c.z);
-						if(p->grain != 0 && p->grain < MAXGRAIN){ //on the surface
+						if(p->grain == THREAT){
+							next = true;
+						}else if(next && p->grain != 0 && p->grain < MAXGRAIN){ //on the surface
 							RGB rgb = grains[p->grain].get_face_color(p->face);
 							int color = gdImageColorAllocate(im, rgb.r, rgb.g, rgb.b);
 							gdImageSetPixel(im, x, y, color);

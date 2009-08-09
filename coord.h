@@ -173,8 +173,8 @@ struct Coord3f {
 		return sqrt(x*x + y*y + z*z);
 	}
 
-	void scale(){
-		double factor = len();
+	void scale(double l = 1){
+		double factor = len() * l;
 		x /= factor;
 		y /= factor;
 		z /= factor;

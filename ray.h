@@ -11,8 +11,8 @@ struct Ray {
 		dir = d;
 	}
 
-	void scale(){
-		dir.scale();
+	void scale(double l = 1){
+		dir.scale(l);
 	}
 
 	void rotx(double t){

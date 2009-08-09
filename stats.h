@@ -252,9 +252,9 @@ struct Stats {
 	}
 
 	static void isomorphic(int t, Grid * grid, const vector<Grain> & grains) {
-
-		const int width = FIELD*1.5;
-		const int height= FIELD;
+		const double scale = 1.0;
+		const int width = scale*FIELD*1.5;
+		const int height= scale*FIELD;
 
 		gdImagePtr im = gdImageCreateTrueColor(width, height);
 		gdImageFill(im, 0, 0, gdImageColorAllocate(im, 0, 0, 0));
@@ -266,8 +266,8 @@ struct Stats {
 		Coord3f shiftx = Coord3f(-1, 1, 0);
 		Coord3f shifty = Coord3f(-1,-1,-2);
 
-		shiftx.scale();
-		shifty.scale();
+		shiftx.scale(scale);
+		shifty.scale(scale);
 
 		Ray init;
 		init.dir = Coord3f(1, 1, -1);

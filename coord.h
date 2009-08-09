@@ -50,6 +50,8 @@ struct Coord2f {
 	}
 };
 
+struct Coord3f;
+
 struct Coord3i {
 	int x, y, z;
 	
@@ -61,12 +63,8 @@ struct Coord3i {
 		y = Y;
 		z = Z;
 	}
-/*	Coord3i(Coord3f c){
-		x = c.x;
-		y = c.y;
-		z = c.z;
-	}
-*/
+	Coord3i(Coord3f c);
+	Coord3i & operator=(const Coord3f & rhs);
 };
 
 struct Coord3f {
@@ -84,6 +82,13 @@ struct Coord3f {
 		x = c.x;
 		y = c.y;
 		z = c.z;
+	}
+
+	Coord3f & operator=(const Coord3i & rhs) {
+		x = rhs.x;
+		y = rhs.y;
+		z = rhs.z;
+		return *this;
 	}
 
 	Coord3f & operator+=(const Coord3f & rhs) {
@@ -200,6 +205,19 @@ struct Coord3f {
 		x = X; y = Y;
 	}
 };
+
+Coord3i::Coord3i(Coord3f c){
+	x = c.x;
+	y = c.y;
+	z = c.z;
+}
+Coord3i & Coord3i::operator=(const Coord3f & rhs){
+	x = rhs.x;
+	y = rhs.y;
+	z = rhs.z;
+	return *this;
+}
+
 
 #endif
 

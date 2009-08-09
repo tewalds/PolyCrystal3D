@@ -274,7 +274,7 @@ struct Stats {
 		init.loc = Coord3f(FIELD/2, FIELD/2, h) - init.dir * dist;
 		init.scale();
 
-		Coord3f light = init.loc;
+		Coord3f light = Coord3f(1, -1, -1);
 
 		for(int y = 0; y < height; y++){
 			for(int x = 0; x < width; x++){
@@ -291,14 +291,17 @@ struct Stats {
 						break;
 
 					if(c.x >= 0 && c.y >= 0 && c.z < grid->zmax){ //inside
-//						if(c.z < grid->heights[c.y][c.x]) //underneath the surface
-//							break;
-
 						Point * p = grid->get_point(c.x, c.y, c.z);
 						if(p->grain == THREAT){
 							next = true;
 						}else if(next && p->grain != 0 && p->grain < MAXGRAIN){ //on the surface
-							RGB rgb = grains[p->grain].get_face_color(p->face);
+							double hue = grains[p->grain].color;
+							double dot = light.dot(grains[p->grain].faces[p->face].vec);
+
+							RGB rgb;
+							if(dot < 0) rgb = RGB(HSV(hue, dot + 1.0, 1.0));
+							else        rgb = RGB(HSV(hue, 1.0, 1.0 - dot));
+
 							int color = gdImageColorAllocate(im, rgb.r, rgb.g, rgb.b);
 							gdImageSetPixel(im, x, y, color);
 							break;

@@ -2,8 +2,10 @@
 #ifndef _STATS_H_
 #define _STATS_H_
 
+#include "color.h"
 #include "worker.h"
 #include "coord.h"
+#include "ray.h"
 
 struct Stats {
 	struct TimeStatsReq : WorkRequest {
@@ -22,6 +24,8 @@ struct Stats {
 	};
 
 	static void timestats(Worker * worker, int t, Grid * grid, const vector<Grain> & grains){
+		if(opts.isomorphic)
+			worker->add(new TimeStatsReq(isomorphic, t, grid, grains));
 		if(opts.slopemap)
 			worker->add(new TimeStatsReq(slopemap,   t, grid, grains));
 		if(opts.heightmap)
@@ -247,6 +251,61 @@ struct Stats {
 		gdImageDestroy(im);
 	}
 
+	static void isomorphic(int t, Grid * grid, const vector<Grain> & grains) {
+		gdImagePtr im = gdImageCreateTrueColor(FIELD, FIELD);
+		gdImageFill(im, 0, 0, gdImageColorAllocate(im, 0, 0, 0));
+
+		double spread = 45.0 * M_PI/180.0;
+		int dist = FIELD;
+		int h = grid->mean_height();
+
+		for(int y = 0; y < FIELD; y++){
+			for(int x = 0; x < FIELD; x++){
+				Ray ray;
+
+				ray.x = FIELD/2 - dist;
+				ray.y = FIELD/2 - dist;
+				ray.z = h + dist;
+
+				ray.a = 1;
+				ray.b = 0;
+				ray.c = 0;
+
+				//generate angles centered around 0 with a total of the spread, then shifted to point in the right direction
+				ray.roty( -(((((double)y/FIELD - 0.5)*spread) + 45.0 * M_PI/180.0)));
+				ray.rotz( -(((((double)x/FIELD - 0.5)*spread) + 45.0 * M_PI/180.0)));
+
+//printf("%f, %f, %f\n", ray.a, ray.b, ray.c);
+
+				while(1){
+					ray.incr();
+					Coord3i c = ray.loc();
+
+					if(c.x >= FIELD || c.y >= FIELD || c.z < grid->zmin) //outside the boundaries
+						break;
+
+					if(c.x >= 0 && c.y >= 0 && c.z < grid->zmax){ //inside
+//						if(c.z < grid->heights[c.y][c.x]) //underneath the surface
+//							break;
+
+						Point * p = grid->get_point(c.x, c.y, c.z);
+						if(p->grain != 0 && p->grain < MAXGRAIN){ //on the surface
+							RGB rgb = grains[p->grain].get_face_color(p->face);
+							int color = gdImageColorAllocate(im, rgb.r, rgb.g, rgb.b);
+							gdImageSetPixel(im, x, y, color);
+						}
+					}
+				}
+			}
+		}
+
+		char filename[50];
+		sprintf(filename, "isomorphic.%05d.png", t);
+		FILE * fd = fopen(filename, "wb");
+		gdImagePng(im, fd);
+		fclose(fd);
+		gdImageDestroy(im);
+	}
 
 };
 

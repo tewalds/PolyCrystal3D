@@ -32,6 +32,7 @@ struct Options {
 	bool timestats; // output time stats
 	bool layerstats;// output layer stats
 	bool slopemap;  // map of slopes, easiest visualization
+	bool isomorphic;// isomorphic visualization
 	bool heightmap; // map of heights
 	bool heightdump;// dump of heights, may be possible to turn into a 3d model
 	bool timemap;   // map of grains as a top down view, may be useful for stats?
@@ -90,6 +91,7 @@ int main(int argc, char **argv){
 	opts.timestats = true;
 	opts.layermap  = true;
 	opts.slopemap  = true;
+	opts.isomorphic= false;
 	opts.heightmap = false;
 	opts.heightdump= false;
 	opts.timemap   = false;
@@ -143,6 +145,7 @@ int main(int argc, char **argv){
 				"\t   --layerstats Output stats per layer                 to layerstats.csv  - on\n"
 				"\t   --layermap   Output a layer  map  for each layer    to layer.%%05d.png  - on\n"
 				"\t   --slopemap   Output a slope  map  for each timestep to slope.%%05d.png  - on\n"
+				"\t   --surf3d     Output a surf3d map  for each timestep to surf3d.%%05d.png - off\n"
 				"\t   --timemap    Output a time   map  for each timestep to time.%%05d.png   - off\n"
 				"\t   --heightmap  Output a height map  for each timestep to height.%%05d.png - off\n"
 				"\t   --heightdump Output a height dump for each timestep to height.%%05d.dat - off\n"
@@ -215,6 +218,7 @@ int main(int argc, char **argv){
 			opts.layerstats= true;
 			opts.timestats = true;
 			opts.slopemap  = true;
+			opts.isomorphic= true;
 			opts.heightmap = true;
 			opts.heightdump= true;
 			opts.timemap   = true;
@@ -233,6 +237,7 @@ int main(int argc, char **argv){
 			opts.layerstats= false;
 			opts.timestats = false;
 			opts.slopemap  = false;
+			opts.isomorphic= false;
 			opts.heightmap = false;
 			opts.heightdump= false;
 			opts.timemap   = false;
@@ -258,6 +263,8 @@ int main(int argc, char **argv){
 			opts.timestats = true;
 		} else if(strcmp(ptr, "--slopemap") == 0) {
 			opts.slopemap = true;
+		} else if(strcmp(ptr, "--surf3d") == 0) {
+			opts.isomorphic = true;
 		} else if(strcmp(ptr, "--heightmap") == 0) {
 			opts.heightmap = true;
 		} else if(strcmp(ptr, "--heightdump") == 0) {

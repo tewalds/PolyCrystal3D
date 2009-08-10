@@ -84,6 +84,10 @@ struct Coord3f {
 		z = c.z;
 	}
 
+	void print(){
+		printf("%f,%f,%f\n", x, y, z);
+	}
+
 	Coord3f & operator=(const Coord3i & rhs) {
 		x = rhs.x;
 		y = rhs.y;
@@ -98,10 +102,8 @@ struct Coord3f {
 		return *this;
 	}
 
-	Coord3f operator+(const Coord3f & rhs) const {
-		Coord3f tmp = *this;
-		tmp += rhs;
-		return tmp;
+	const Coord3f operator+(const Coord3f & rhs) const {
+		return Coord3f(*this) += rhs;
 	}
 
 	Coord3f & operator+=(const double rhs) {
@@ -111,10 +113,8 @@ struct Coord3f {
 		return *this;
 	}
 
-	Coord3f operator+(const double rhs) const {
-		Coord3f tmp = *this;
-		tmp += rhs;
-		return tmp;
+	const Coord3f operator+(const double rhs) const {
+		return Coord3f(*this) += rhs;
 	}
 
 	Coord3f & operator-=(const Coord3f & rhs) {
@@ -124,10 +124,8 @@ struct Coord3f {
 		return *this;
 	}
 
-	Coord3f operator-(const Coord3f & rhs) const {
-		Coord3f tmp = *this;
-		tmp -= rhs;
-		return tmp;
+	const Coord3f operator-(const Coord3f & rhs) const {
+		return Coord3f(*this) -= rhs;
 	}
 
 	Coord3f & operator-=(const double rhs) {
@@ -137,10 +135,8 @@ struct Coord3f {
 		return *this;
 	}
 
-	Coord3f operator-(const double rhs) const {
-		Coord3f tmp = *this;
-		tmp -= rhs;
-		return tmp;
+	const Coord3f operator-(const double rhs) const {
+		return Coord3f(*this) -= rhs;
 	}
 
 	Coord3f & operator*=(double rhs) {
@@ -150,10 +146,8 @@ struct Coord3f {
 		return *this;
 	}
 
-	Coord3f operator*(double rhs) const {
-		Coord3f tmp = *this;
-		tmp *= rhs;
-		return tmp;
+	const Coord3f operator*(double rhs) const {
+		return Coord3f(*this) *= rhs;
 	}
 
 	Coord3f & operator/=(double rhs) {
@@ -163,48 +157,58 @@ struct Coord3f {
 		return *this;
 	}
 
-	Coord3f operator/(double rhs) const {
-		Coord3f tmp = *this;
-		tmp /= rhs;
-		return tmp;
+	const Coord3f operator/(double rhs) const {
+		return Coord3f(*this) /= rhs;
 	}
 
 	double len(){
 		return sqrt(x*x + y*y + z*z);
 	}
 
-	void scale(double l = 1){
+	Coord3f & scale(double l = 1){
 		double factor = len() * l;
 		x /= factor;
 		y /= factor;
 		z /= factor;
+		return *this;
 	}
 
 	double dot(Coord3f c){
 		return x*c.x + y*c.y + z*c.z;
 	}
 
-	void rotx(double t){
+	Coord3f cross(const Coord3f & c){
+		return Coord3f(y*c.z - z*c.y, z*c.x - x*c.z, x*c.y - y*c.x);
+	}
+
+	Coord3f & rotx(double t){
 		double Y, Z;
 		Y = cos(t)*y + sin(t)*z;
 		Z = -sin(t)*y + cos(t)*z;
 		y = Y; z = Z;
+		return *this;
 	}
 
-	void roty(double t){
+	Coord3f & roty(double t){
 		double X, Z;
 		X = cos(t)*x - sin(t)*z;
 		Z = sin(t)*x + cos(t)*z;
 		z = X; z = Z;
+		return *this;
 	}
 
-	void rotz(double t){
+	Coord3f & rotz(double t){
 		double X, Y;
 		X = cos(t)*x + sin(t)*y;
 		Y = -sin(t)*x + cos(t)*y;
 		x = X; y = Y;
+		return *this;
 	}
 };
+
+Coord3f operator-(const Coord3f & c){
+	return c * -1;
+}
 
 Coord3i::Coord3i(Coord3f c){
 	x = c.x;

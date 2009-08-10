@@ -255,7 +255,7 @@ struct Stats {
 		const double scale = 1.0;
 		const int width = scale*FIELD*1.5;
 		const int height= scale*FIELD;
-		int dist = FIELD;
+		int dist = FIELD*0.7;
 
 		Ray init;
 		init.dir = Coord3f(1, 1, -1).scale();

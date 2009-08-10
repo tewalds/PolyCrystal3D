@@ -2,6 +2,8 @@
 #ifndef _COORD_H_
 #define _COORD_H_
 
+#include <cmath>
+
 int periodic_dist_sq(int x1, int y1, int x2, int y2){
 	int dx = abs(x1 - x2);
 	int dy = abs(y1 - y2);
@@ -68,8 +70,10 @@ struct Coord3i {
 };
 
 struct Coord3f {
-	double 	x, y, z;
-	
+	union { double x, a; };
+	union { double y, b; };
+	union { double z, c; };
+
 	Coord3f(){
 		x = y = z = 0;
 	}

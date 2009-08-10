@@ -1,7 +1,10 @@
 TODO:
 
-- optional? outlining for layers and cross sections
-- 3d view, ray traced?
+- 3d view, ray traced
+  - shadows
+  - perspective
+  - solid sides
+  - parallelization
 
 
 - deal with overhangs
@@ -9,7 +12,6 @@ TODO:
 - faster diffusion
   - fix Grid::set_diffprob
 
-- 3d visualization?
 
 Paper: Ballistic Deposition Level Set Simulation
 Only self shadowing, enough diffusion to make facets, but infinite schwobel barrier between faces

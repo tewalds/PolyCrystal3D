@@ -255,26 +255,23 @@ struct Stats {
 		const double scale = 1.0;
 		const int width = scale*FIELD*1.5;
 		const int height= scale*FIELD;
+		int dist = FIELD;
+
+		Ray init;
+		init.dir = Coord3f(1, 1, -1).scale();
+		init.loc = Coord3f(FIELD/2, FIELD/2, grid->mean_height()) - init.dir * dist;
+
+		Coord3f light = Coord3f(1, -1, -1).scale();
+
 
 		gdImagePtr im = gdImageCreateTrueColor(width, height);
 		gdImageFill(im, 0, 0, gdImageColorAllocate(im, 0, 0, 0));
 
-		int dist = FIELD;
-		int h = grid->mean_height();
+		Coord3f shiftx = Coord3f(0, 0, 1).cross(init.dir);
+		Coord3f shifty = shiftx.cross(init.dir);
 
-
-		Coord3f shiftx = Coord3f(-1, 1, 0);
-		Coord3f shifty = Coord3f(-1,-1,-2);
-
-		shiftx.scale(scale);
-		shifty.scale(scale);
-
-		Ray init;
-		init.dir = Coord3f(1, 1, -1);
-		init.loc = Coord3f(FIELD/2, FIELD/2, h) - init.dir * dist;
-		init.scale();
-
-		Coord3f light = Coord3f(1, -1, -1);
+		shiftx.scale(1/scale);
+		shifty.scale(1/scale);
 
 		for(int y = 0; y < height; y++){
 			for(int x = 0; x < width; x++){

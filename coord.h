@@ -166,7 +166,7 @@ struct Coord3f {
 	}
 
 	Coord3f & scale(double l = 1){
-		double factor = len() * l;
+		double factor = len() / l;
 		x /= factor;
 		y /= factor;
 		z /= factor;

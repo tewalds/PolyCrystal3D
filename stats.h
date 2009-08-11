@@ -279,7 +279,6 @@ struct Stats {
 
 				ray.loc += shiftx * (x - width/2) + shifty * (y - height/2);
 
-				bool next = false;
 				while(1){
 					ray.incr();
 					Coord3i c = ray.loc;
@@ -289,15 +288,19 @@ struct Stats {
 
 					if(c.x >= 0 && c.y >= 0 && c.z < grid->zmax){ //inside
 						Point * p = grid->get_point(c.x, c.y, c.z);
-						if(p->grain == THREAT){
-							next = true;
-						}else if(next && p->grain != 0 && p->grain < MAXGRAIN){ //on the surface
-							double hue = grains[p->grain].color;
-							double dot = light.dot(grains[p->grain].faces[p->face].vec);
 
+						if(p->grain != 0 && p->grain < MAXGRAIN){ //on the surface
+							double hue = grains[p->grain].color;
 							RGB rgb;
-							if(dot < 0) rgb = RGB(HSV(hue, dot + 1.0, 1.0));
-							else        rgb = RGB(HSV(hue, 1.0, 1.0 - dot));
+
+							if(c.x == 0 || c.y == 0){
+								rgb = RGB(HSV(hue, 1.0, 1.0));
+							}else{
+								double dot = light.dot(grains[p->grain].faces[p->face].vec);
+
+								if(dot < 0) rgb = RGB(HSV(hue, dot + 1.0, 1.0));
+								else        rgb = RGB(HSV(hue, 1.0, 1.0 - dot));
+							}
 
 							int color = gdImageColorAllocate(im, rgb.r, rgb.g, rgb.b);
 							gdImageSetPixel(im, x, y, color);

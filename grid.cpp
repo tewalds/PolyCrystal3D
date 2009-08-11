@@ -469,6 +469,9 @@ public:
 
 	//dump full or inactive planes off the bottom, output layer based data
 	void cleangrid(int t, vector<Grain> & grains){
+		if(opts.isomorphic) //don't want to drop any layers for isomorphic
+			return;
+
 		int minheight = heights[0][0];
 		for(int y = 0; y < FIELD; y++)
 			for(int x = 0; x < FIELD; x++)

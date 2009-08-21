@@ -290,17 +290,19 @@ struct Stats {
 						Point * p = grid->get_point(c.x, c.y, c.z);
 
 						if(p->grain != 0 && p->grain < MAXGRAIN){ //on the surface
-							double hue = grains[p->grain].color;
+							double hue, dot;
 							RGB rgb;
+							Coord3f vec;
 
-							if(c.x == 0 || c.y == 0){
-								rgb = RGB(HSV(hue, 1.0, 1.0));
-							}else{
-								double dot = light.dot(grains[p->grain].faces[p->face].vec);
+							if(c.x == 0)      vec = Coord3f(-1, 0, 0);
+							else if(c.y == 0) vec = Coord3f(0, -1, 0);
+							else              vec = grains[p->grain].faces[p->face].vec;
 
-								if(dot < 0) rgb = RGB(HSV(hue, dot + 1.0, 1.0));
-								else        rgb = RGB(HSV(hue, 1.0, 1.0 - dot));
-							}
+							dot = light.dot(vec);
+							hue = grains[p->grain].color;
+
+							if(dot < 0) rgb = RGB(HSV(hue, 1.0 + dot, 1.0));
+							else        rgb = RGB(HSV(hue, 1.0, 1.0 - dot));
 
 							int color = gdImageColorAllocate(im, rgb.r, rgb.g, rgb.b);
 							gdImageSetPixel(im, x, y, color);

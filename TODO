@@ -1,22 +1,18 @@
 TODO:
 
+- use opencl to speed it up massively
+
 - 3d view, ray traced
   - shadows
   - perspective
-  - solid sides
-  - parallelization
-
 
 - deal with overhangs
 
 - faster diffusion
   - fix Grid::set_diffprob
 
+- represent the surface as a connected graph
+  - stored in a hash table, hash=x*y*z?
+  - stores 6/26 bits of which neighbours exist?
 
-Paper: Ballistic Deposition Level Set Simulation
-Only self shadowing, enough diffusion to make facets, but infinite schwobel barrier between faces
-1. compare growth dependence on crystal orientation to BD model texture, roughness, grain area, self-affinity (functional form)
-2. dependence on ray anyle
-3. Influence of geometry on BD, l/sqrt(A), try various shapes: 3, 4, 6, 8, etc faces to fastest growth direction
-4. Initial Distribution, try random vs 1,0,0, 1,1,1, etc, try non-rotated cubes
 

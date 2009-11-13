@@ -2,6 +2,7 @@
 #ifndef _STATS_H_
 #define _STATS_H_
 
+#include <pthread.h>
 #include "color.h"
 #include "worker.h"
 #include "coord.h"
@@ -23,9 +24,33 @@ struct Stats {
 		}
 	};
 
+	struct RayReq : WorkRequest {
+		Grid * grid;
+		const vector<Grain> & grains;
+		Ray ray;
+		Coord3f light;
+		int x, y;
+		gdImagePtr im;
+		pthread_mutex_t * lock;
+
+		RayReq(Grid * _grid, const vector<Grain> & _grains, Ray r, Coord3f _light, int _x, int _y, gdImagePtr _im, pthread_mutex_t * _lock)
+			: grid(_grid), grains(_grains), ray(r), light(_light), x(_x), y(_y), im(_im), lock(_lock) { }
+
+		int64_t run(){
+			RGB rgb = Stats::shootray(ray, light, grid, grains);
+
+			pthread_mutex_lock(lock);
+
+			int color = gdImageColorAllocate(im, rgb.r, rgb.g, rgb.b);
+			gdImageSetPixel(im, x, y, color);
+
+			pthread_mutex_unlock(lock);
+
+			return 0;
+		}
+	};
+
 	static void timestats(Worker * worker, int t, Grid * grid, const vector<Grain> & grains){
-		if(opts.isomorphic)
-			worker->add(new TimeStatsReq(isomorphic, t, grid, grains));
 		if(opts.slopemap)
 			worker->add(new TimeStatsReq(slopemap,   t, grid, grains));
 		if(opts.heightmap)
@@ -44,6 +69,9 @@ struct Stats {
 			worker->add(new TimeStatsReq(timestats,  t, grid, grains));
 
 		worker->wait();	
+
+		if(opts.isomorphic)
+			isomorphic(worker, t, grid, grains);
 	}
 
 	static void growth(int t, Grid * grid, const vector<Grain> & grains) {
@@ -251,7 +279,7 @@ struct Stats {
 		gdImageDestroy(im);
 	}
 
-	static void isomorphic(int t, Grid * grid, const vector<Grain> & grains) {
+	static void isomorphic(Worker * worker, int t, Grid * grid, const vector<Grain> & grains) {
 		const double scale = 1.0;
 		const int width = scale*FIELD*1.5;
 		const int height= scale*FIELD;
@@ -273,45 +301,20 @@ struct Stats {
 		shiftx.scale(1/scale);
 		shifty.scale(1/scale);
 
+		pthread_mutex_t lock;
+		pthread_mutex_init(&lock, NULL);
+
 		for(int y = 0; y < height; y++){
 			for(int x = 0; x < width; x++){
 				Ray ray = init;
 
 				ray.loc += shiftx * (x - width/2) + shifty * (y - height/2);
 
-				while(1){
-					ray.incr();
-					Coord3i c = ray.loc;
-
-					if(c.x >= FIELD || c.y >= FIELD || c.z < grid->zmin) //outside the boundaries
-						break;
-
-					if(c.x >= 0 && c.y >= 0 && c.z < grid->zmax){ //inside
-						Point * p = grid->get_point(c.x, c.y, c.z);
-
-						if(p->grain != 0 && p->grain < MAXGRAIN){ //on the surface
-							double hue, dot;
-							RGB rgb;
-							Coord3f vec;
-
-							if(c.x == 0)      vec = Coord3f(-1, 0, 0);
-							else if(c.y == 0) vec = Coord3f(0, -1, 0);
-							else              vec = grains[p->grain].faces[p->face].vec;
-
-							dot = light.dot(vec);
-							hue = grains[p->grain].color;
-
-							if(dot < 0) rgb = RGB(HSV(hue, 1.0 + dot, 1.0));
-							else        rgb = RGB(HSV(hue, 1.0, 1.0 - dot));
-
-							int color = gdImageColorAllocate(im, rgb.r, rgb.g, rgb.b);
-							gdImageSetPixel(im, x, y, color);
-							break;
-						}
-					}
-				}
+//				shootray(ray, light, grid, grains);
+				worker->add(new RayReq(grid, grains, ray, light, x, y, im, &lock));
 			}
 		}
+		worker->wait();
 
 		char filename[50];
 		sprintf(filename, "isomorphic.%05d.png", t);
@@ -319,6 +322,35 @@ struct Stats {
 		gdImagePng(im, fd);
 		fclose(fd);
 		gdImageDestroy(im);
+	}
+
+	static RGB shootray(Ray ray, Coord3f light, Grid * grid, const vector<Grain> & grains){
+		while(1){
+			ray.incr();
+			Coord3i c = ray.loc;
+
+			if(c.x >= FIELD || c.y >= FIELD || c.z < grid->zmin) //outside the boundaries
+				return RGB();
+
+			if(c.x >= 0 && c.y >= 0 && c.z < grid->zmax){ //inside
+				Point * p = grid->get_point(c.x, c.y, c.z);
+
+				if(p->grain != 0 && p->grain < MAXGRAIN){ //on the surface
+					double hue, dot;
+					Coord3f vec;
+
+					if(c.x == 0)      vec = Coord3f(-1, 0, 0);
+					else if(c.y == 0) vec = Coord3f(0, -1, 0);
+					else              vec = grains[p->grain].faces[p->face].vec;
+
+					dot = light.dot(vec);
+					hue = grains[p->grain].color;
+
+					if(dot < 0) return RGB(HSV(hue, 1.0 + dot, 1.0));
+					else        return RGB(HSV(hue, 1.0, 1.0 - dot));
+				}
+			}
+		}
 	}
 
 };

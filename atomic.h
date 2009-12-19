@@ -15,6 +15,11 @@
 #define CASp(ptr, old, new) if(*(ptr) == (old)) { *(ptr) = (new); }
 #define INCR(var) (++(var))
 
+/*
+template <class T> void CASv(T& var, const T& old, const T& val) {
+	if (var == old) var = val;
+}
+*/
 #endif
 
 

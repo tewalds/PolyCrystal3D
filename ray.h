@@ -24,7 +24,7 @@ struct Ray {
 	}
 
 	void rotz(double t){
-		rotz(t);
+		dir.rotz(t);
 	}
 
 	void incr(){
@@ -36,15 +36,13 @@ struct Ray {
 	}
 
 	bool incr(int zmin){
-		loc.z += dir.z;
+		loc += dir;
 
 		if(loc.z < zmin){
-			loc.z -= dir.z;
+			loc -= dir;
 			return false;
 		}
 
-		loc.x += dir.x;
-		loc.y += dir.y;
 		return true;
 	}
 };

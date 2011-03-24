@@ -1,0 +1,17 @@
+Large scale 3d level set simulator for polycrystalline thin film growth.
+
+It generates a large number of crystals and grows them up using various ray effects. It stores the grid in a giant multi-dimensional array that is grown and shrunk as needed. It does several forms of visualization including isometric ray tracing.
+
+This is the code used to generate the data for the paper
+	@article{ophus2010role,
+	  title={{The role of self-shadowing on growth and scaling laws of faceted polycrystalline thin films}},
+	  author={Ophus, C. and Ewalds, T. and Luber, E.J. and Mitlin, D.},
+	  journal={Acta materialia},
+	  volume={58},
+	  number={15},
+	  pages={5150--5159},
+	  issn={1359-6454},
+	  year={2010},
+	  publisher={Elsevier}
+	}
+

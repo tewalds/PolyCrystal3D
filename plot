@@ -8,7 +8,7 @@ $plot .= "set datafile separator \",\"\n";
 $parts = array();
 array_shift($argv);
 foreach($argv as $dir)
-	$parts[] = "\"$dir/timestats\" using 2:3 with lines title \"$dir\"";
+	$parts[] = "\"$dir/timestats.csv\" using 2:3 with lines title \"$dir\"";
 
 $plot .= "plot " . implode(', ', $parts);
 
